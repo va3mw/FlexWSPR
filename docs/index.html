@@ -85,6 +85,7 @@ footer { margin-top: 48px; padding: 24px 0 40px; border-top: 1px solid var(--lin
       <a class="btn ghost" href="#download">Raspberry Pi and Linux</a>
       <a class="btn ghost" href="https://github.com/va3mw/FlexWSPR">Source on GitHub</a>
     </div>
+    <p class="small"><b style="color:var(--aub-ink)">Receive only:</b> FlexWSPR never keys the radio, and there are no plans to add transmit. To transmit WSPR, use WSJT-X.</p>
     <p class="small">Free and open source (MIT). Windows 10/11, Debian, Raspberry Pi OS. Needs a FLEX-6000 series radio and WSJT-X.</p>
   </div>
 </header>
@@ -210,6 +211,8 @@ sudo systemctl enable --now flexwspr</code></pre>
   <h2>Questions</h2>
   <h3>Which radios does it work with?</h3>
   <p>FLEX-6000 series radios running SmartSDR. It has been run on a FLEX-6600 with firmware v4.3.16. FlexWSPR connects as a GUI client, so on radios with few client connections, such as the FLEX-6300, SmartSDR may not be able to connect at the same time.</p>
+  <h3>Can it transmit WSPR?</h3>
+  <p>No. FlexWSPR is receive only: it never keys the radio, and there are no plans to add a transmit feature. To transmit WSPR, use WSJT-X.</p>
   <h3>Does it need SmartSDR or DAX running?</h3>
   <p>No. FlexWSPR talks to the radio directly over the network. Don't run another DAX IQ program on the same IQ channel (channel 1 by default; you can change it in Settings).</p>
   <h3>Nothing decodes. What should I check?</h3>
