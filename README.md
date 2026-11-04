@@ -9,6 +9,9 @@ receive antenna per band, rank the best signal heard and upload spots to
 wsprnet.org. The Openings tab shows which bands are open from your area,
 from your own receiver and from the public WSPR database.
 
+**FlexWSPR is receive only.** It never keys the radio, and there are no plans
+to add a transmit feature. To transmit WSPR, use WSJT-X.
+
 It comes two ways, sharing one engine and one GUI:
 
 | Program | GUI | For |
