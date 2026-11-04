@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlexWSPR</title>
+<meta name="description" content="FlexWSPR: a WSPR receiver for FlexRadio on Windows, Debian and Raspberry Pi, with band rotation, a receive antenna per band, band openings and wsprnet.org upload.">
+<style>
+:root {
+  --aub: #3f0e40; --aub-2: #350d36; --aub-3: #522653; --aub-ink: #fff; --aub-muted: #cfc3cf;
+  --bg: #f8f8f8; --panel: #fff; --line: #e2dfe2; --text: #1d1c1d; --muted: #616061;
+  --accent: #1264a3; --go: #007a5a; --go-hover: #148567;
+  --c-blue: #36c5f0; --c-green: #2eb67d; --c-yellow: #ecb22e; --c-red: #e01e5a;
+  --code: #f1edf1;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --aub: #350d36; --aub-2: #2a0a2b; --aub-ink: #e8e8e8; --aub-muted: #a8a0a8;
+    --bg: #1a1d21; --panel: #222529; --line: #35373b; --text: #d1d2d3; --muted: #9a9b9e;
+    --accent: #1d9bd1; --code: #2c2d30; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--accent); }
+code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 14px; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code); padding: 12px 14px; border-radius: 8px; overflow-x: auto; line-height: 1.5; }
+pre code { background: none; padding: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+header.hero { background: var(--aub); color: var(--aub-ink); padding: 48px 0 40px; }
+.hero h1 { margin: 0; font-size: 44px; letter-spacing: -.5px; }
+.hero p.lead { font-size: 20px; color: var(--aub-muted); max-width: 720px; margin: 10px 0 24px; }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-block; padding: 10px 18px; border-radius: 8px; font-weight: 700; text-decoration: none; }
+.btn.go { background: var(--go); color: #fff; }
+.btn.go:hover { background: var(--go-hover); }
+.btn.ghost { border: 1px solid rgba(255,255,255,.35); color: var(--aub-ink); }
+.btn.ghost:hover { background: var(--aub-3); }
+.hero .small { color: var(--aub-muted); font-size: 14px; margin-top: 12px; }
+nav.bar { background: var(--aub-2); position: sticky; top: 0; z-index: 2; }
+nav.bar .wrap { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding-top: 6px; padding-bottom: 6px; }
+nav.bar a { color: var(--aub-muted); text-decoration: none; font-weight: 600; padding: 6px 12px; border-radius: 6px; white-space: nowrap; font-size: 15px; }
+nav.bar a:hover { background: var(--aub-3); color: var(--aub-ink); }
+
+section { padding: 40px 0 8px; }
+h2 { font-size: 28px; margin: 0 0 12px; }
+h3 { font-size: 19px; margin: 24px 0 6px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--c-blue); border-radius: 10px; padding: 14px 16px; }
+.card:nth-child(4n+2) { border-top-color: var(--c-green); }
+.card:nth-child(4n+3) { border-top-color: var(--c-yellow); }
+.card:nth-child(4n+4) { border-top-color: var(--c-red); }
+.card h3 { margin: 0 0 4px; font-size: 17px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+figure { margin: 20px 0; }
+figure img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; background: #fff; }
+figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 14px; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+.scroll { overflow-x: auto; }
+.steps { counter-reset: s; list-style: none; padding: 0; }
+.steps li { counter-increment: s; position: relative; padding: 0 0 12px 44px; }
+.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 800px) { .two { grid-template-columns: 1fr; } .hero h1 { font-size: 34px; } }
+.note { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--c-yellow); border-radius: 8px; padding: 10px 14px; }
+.lv { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+footer { margin-top: 48px; padding: 24px 0 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>FlexWSPR</h1>
+    <p class="lead">A WSPR receiver for FlexRadio. It takes DAX IQ straight from the radio, decodes every two-minute cycle with WSJT-X's <code style="background:rgba(255,255,255,.12);color:inherit">wsprd</code>, rotates through bands, and shows which bands are open from where you are.</p>
+    <div class="btns">
+      <a class="btn go" href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr-gui-windows-amd64.exe">Download for Windows</a>
+      <a class="btn ghost" href="#download">Raspberry Pi and Linux</a>
+      <a class="btn ghost" href="https://github.com/va3mw/FlexWSPR">Source on GitHub</a>
+    </div>
+    <p class="small">Free. Windows 10/11, Debian, Raspberry Pi OS. Needs a FLEX-6000 series radio and WSJT-X.</p>
+  </div>
+</header>
+
+<nav class="bar"><div class="wrap">
+  <a href="#features">Features</a>
+  <a href="#openings">Openings</a>
+  <a href="#download">Download</a>
+  <a href="#windows">Windows</a>
+  <a href="#pi">Raspberry Pi</a>
+  <a href="#schedule">Schedule</a>
+  <a href="#best">Best signal</a>
+  <a href="#faq">Questions</a>
+</div></nav>
+
+<main class="wrap">
+
+<section id="features">
+  <h2>What it does</h2>
+  <div class="cards">
+    <div class="card"><h3>No audio cables</h3><p>Opens its own panadapter and DAX IQ stream on the radio, so SmartSDR, DAX audio and your slices stay free.</p></div>
+    <div class="card"><h3>Band rotation</h3><p>Step through 80 m to 6 m (or any bands) all day, or set different bands by time of day.</p></div>
+    <div class="card"><h3>Antenna per band</h3><p>Pick ANT1, ANT2, RXa, RXb or a transverter port for each band; it switches with the band.</p></div>
+    <div class="card"><h3>Band openings</h3><p>Shows which bands are open from your area right now, and over the last 24 hours.</p></div>
+    <div class="card"><h3>Best signal</h3><p>Ranks every spot by SNR, distance and transmit power, so a weak signal from far away can win.</p></div>
+    <div class="card"><h3>wsprnet.org upload</h3><p>Sends your spots the way WSJT-X does, and keeps them queued while the internet is down.</p></div>
+    <div class="card"><h3>Desktop or headless</h3><p>A Windows desktop app, or a headless program for a Raspberry Pi that you set up from any web browser.</p></div>
+    <div class="card"><h3>Watch from anywhere</h3><p>The same screens are served as a web page, so you can check the station from a phone or another PC.</p></div>
+  </div>
+</section>
+
+<section id="openings">
+  <h2>Openings: a screen to leave up</h2>
+  <p>The Openings tab refreshes every minute. It combines what your own receiver hears with what other stations near you are hearing, taken from the public WSPR database at <a href="https://wspr.live">wspr.live</a>. So it covers bands FlexWSPR is not listening to at that moment.</p>
+  <figure>
+    <img src="openings.png" alt="Openings tab: a tile for each band from 630 m to 6 m, rated Local, Quiet, Open or DX" loading="lazy">
+    <figcaption><b>Bands now.</b> Each tile counts the last 30 minutes of spots with either end within 500 km of your grid, and says when you last heard something on that band.</figcaption>
+  </figure>
+  <div class="scroll"><table>
+    <tr><th>Rating</th><th>Means</th></tr>
+    <tr><td><span class="lv" style="background:#ebe8eb"></span>Quiet</td><td>No paths near you on that band</td></tr>
+    <tr><td><span class="lv" style="background:#bfe3f5"></span>Local</td><td>Paths, but few over 1000 km</td></tr>
+    <tr><td><span class="lv" style="background:#2eb67d"></span>Open</td><td>At least 3 paths over 1000 km, and 10% or more of all paths</td></tr>
+    <tr><td><span class="lv" style="background:#3f0e40"></span>DX</td><td>At least 3 paths over 5000 km, and 5% or more of all paths</td></tr>
+  </table></div>
+  <figure>
+    <img src="your-area.png" alt="Heat map of the last 24 hours by band and UTC hour for stations near you" loading="lazy">
+    <figcaption><b>Your area, last 24 hours.</b> The same rating for each band and UTC hour, so you can see when each band usually opens and closes.</figcaption>
+  </figure>
+  <figure>
+    <img src="heard-here.png" alt="Heat map of spots heard by your own receiver over the last 24 hours" loading="lazy">
+    <figcaption><b>Heard here, last 24 hours.</b> Your own spots per band and hour, coloured by the farthest station heard. Striped cells are hours FlexWSPR was on another band.</figcaption>
+  </figure>
+</section>
+
+<section id="download">
+  <h2>Download</h2>
+  <p>From the <a href="https://github.com/va3mw/FlexWSPR/releases/latest">latest release</a>:</p>
+  <div class="scroll"><table>
+    <tr><th>File</th><th>For</th></tr>
+    <tr><td><a href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr-gui-windows-amd64.exe">flexwspr-gui-windows-amd64.exe</a></td><td>Windows desktop app (most people want this one)</td></tr>
+    <tr><td><a href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr-linux-arm64">flexwspr-linux-arm64</a></td><td>Raspberry Pi OS 64-bit (Pi 3, 4, 5), headless</td></tr>
+    <tr><td><a href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr-linux-arm">flexwspr-linux-arm</a></td><td>Raspberry Pi OS 32-bit, headless</td></tr>
+    <tr><td><a href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr-linux-amd64">flexwspr-linux-amd64</a></td><td>Debian or Ubuntu on a PC, headless</td></tr>
+    <tr><td><a href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr-windows-amd64.exe">flexwspr-windows-amd64.exe</a></td><td>Windows, headless (web page only)</td></tr>
+    <tr><td><a href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr.service">flexwspr.service</a>, <a href="https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr.example.yaml">flexwspr.example.yaml</a></td><td>systemd unit and a sample settings file, for Linux</td></tr>
+  </table></div>
+  <p>Windows may warn that the program is from an unknown publisher, because it is not code-signed. Choose <i>More info → Run anyway</i>.</p>
+</section>
+
+<section id="windows">
+  <h2>Getting started on Windows</h2>
+  <ol class="steps">
+    <li>Install <a href="https://wsjt.sourceforge.io/wsjtx.html">WSJT-X</a>. FlexWSPR uses its <code>wsprd.exe</code> decoder and finds it in <code>C:\WSJT\wsjtx\bin</code>, <code>Program Files\wsjtx\bin</code> or on the PATH.</li>
+    <li>Run <code>flexwspr-gui-windows-amd64.exe</code>. On first start it opens on <b>Settings</b>.</li>
+    <li>Enter your callsign and grid. Click <b>Find radios</b> and pick yours, or type its IP address.</li>
+    <li>Pick a receive antenna, by default or per band. The menus list what your radio has once it connects.</li>
+    <li>Tick <b>Upload spots to wsprnet.org</b> if you want to report, then <b>Save and restart</b>.</li>
+    <li>Choose a band or a rotation on the <b>Schedule</b> tab. The first spots appear about two minutes after it connects.</li>
+  </ol>
+  <p>Settings are saved in <code>C:\ProgramData\FlexWSPR\flexwspr.yaml</code>. Spots and the log go to <code>C:\ProgramData\FlexWSPR\data</code>. While the app runs, it also serves its screens at <a href="http://localhost:8080">http://localhost:8080</a>. To watch from a phone, open <b>Settings → Decoder and files</b> and tick <b>Reachable from other computers</b>.</p>
+</section>
+
+<section id="pi">
+  <h2>Running headless on a Raspberry Pi</h2>
+  <p>Install the decoder and a good clock, then the program and its service:</p>
+<pre><code>sudo apt install wsjtx chrony
+wget https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr-linux-arm64
+wget https://github.com/va3mw/FlexWSPR/releases/latest/download/flexwspr.service
+sudo install flexwspr-linux-arm64 /usr/local/bin/flexwspr
+sudo cp flexwspr.service /etc/systemd/system/
+sudo systemctl enable --now flexwspr</code></pre>
+  <p>Then browse to <code>http://&lt;pi-name&gt;:8080</code> from any computer and set it up there, just as on Windows. <code>journalctl -u flexwspr -f</code> shows the log. On 32-bit Raspberry Pi OS, use <code>flexwspr-linux-arm</code> instead.</p>
+  <p class="note">The web page has no password. Keep port 8080 on your own network. Over the network, the page can change station, radio, antenna, schedule and upload settings, but not program paths.</p>
+</section>
+
+<section id="schedule">
+  <h2>Choosing a schedule</h2>
+  <div class="two">
+    <div>
+      <h3>One band</h3>
+      <p>Stays on one band. Good for watching a single band closely.</p>
+      <h3>Band rotation</h3>
+      <p>Pick a range, such as 80 m to 6 m, and how many two-minute cycles to stay on each band. With 10 bands at 3 cycles each, every band gets 6 minutes once an hour, around the clock. This is a good default for catching openings you didn't expect.</p>
+    </div>
+    <div>
+      <h3>Time slots</h3>
+      <p>Give each UTC time range its own band list: for example, low bands at night and high bands by day. Outside every slot, it stays on the default band.</p>
+      <p>The Schedule tab previews the next hour before you save. Band changes happen in the gap between cycles, so no capture is cut short.</p>
+    </div>
+  </div>
+</section>
+
+<section id="best">
+  <h2>Best signal</h2>
+  <p>Each spot gets a score: the SNR it would have had from a 1&nbsp;W transmitter 1000&nbsp;km away.</p>
+<pre><code>score = SNR − (power dBm − 30) + 20·log10(km ÷ 1000)</code></pre>
+  <p>Higher transmit power counts against a station, and each doubling of distance adds 6 dB. So −24 dB from 200 mW at 7000 km (score −0.1) beats −10 dB from 5 W at 800 km (score −18.9). The Spots tab shows the best signal overall and per band. The Openings tab lists every station heard, best first.</p>
+</section>
+
+<section id="faq">
+  <h2>Questions</h2>
+  <h3>Which radios does it work with?</h3>
+  <p>FLEX-6000 series radios running SmartSDR. It has been run on a FLEX-6600 with firmware v4.3.16. FlexWSPR connects as a GUI client, so on radios with few client connections, such as the FLEX-6300, SmartSDR may not be able to connect at the same time.</p>
+  <h3>Does it need SmartSDR or DAX running?</h3>
+  <p>No. FlexWSPR talks to the radio directly over the network. Don't run another DAX IQ program on the same IQ channel (channel 1 by default; you can change it in Settings).</p>
+  <h3>Nothing decodes. What should I check?</h3>
+  <p>First, the clock: WSPR needs your PC clock within about one second. Install chrony on Linux; on Windows, check with <code>w32tm /query /status</code>. Then check that the antenna is right for the band. If you still never get a decode, try <i>Flip Q in .c2 files</i>, then <i>Swap I and Q</i>, in Settings.</p>
+  <h3>What is sent over the internet?</h3>
+  <p>Only what you turn on. With upload on, your spots go to wsprnet.org. With Openings on, FlexWSPR asks wspr.live about stations near your grid, at most every five minutes. Both can be turned off in Settings.</p>
+</section>
+
+<footer>
+  FlexWSPR by VA3MW. Source, issues and the full README are on <a href="https://github.com/va3mw/FlexWSPR">GitHub</a>. WSPR and <code>wsprd</code> are part of WSJT-X by K1JT and the WSJT development group. FlexRadio, SmartSDR and DAX are trademarks of FlexRadio Systems.
+</footer>
+</main>
+</body>
+</html>

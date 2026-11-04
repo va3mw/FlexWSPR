@@ -1,5 +1,7 @@
 # FlexWSPR
 
+**Web page: <https://va3mw.github.io/FlexWSPR/>** · [Download](https://github.com/va3mw/FlexWSPR/releases/latest)
+
 A WSPR receiver for FlexRadio, for Windows, Debian and Raspberry Pi. It
 connects to the radio, opens a DAX IQ stream, records each two-minute cycle
 and decodes it with `wsprd` (from WSJT-X). It can rotate through bands, pick a
