@@ -191,15 +191,23 @@ func (m *monitor) summary() Summary {
 	return m.hist.summary(time.Now())
 }
 
-// loadHistory reloads the last day from the data folder, once per folder.
+// loadHistory reloads the last day from the data folder when the files or
+// the grid (which sets every distance) have changed. The files are read
+// without holding the lock, so the GUI keeps updating meanwhile.
 func (m *monitor) loadHistory(cfg *config.Config) {
+	key := cfg.DataDir + "|" + cfg.SpotsFile + "|" + strings.ToUpper(cfg.Grid)
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.hist.loaded == cfg.DataDir {
+	same := m.hist.loaded == key
+	m.mu.Unlock()
+	if same {
 		return
 	}
-	m.hist.load(cfg.SpotsFile, filepath.Join(cfg.DataDir, CyclesFile), cfg.Grid, time.Now())
-	m.hist.loaded = cfg.DataDir
+	var h history
+	h.load(cfg.SpotsFile, filepath.Join(cfg.DataDir, CyclesFile), cfg.Grid, time.Now())
+	h.loaded = key
+	m.mu.Lock()
+	m.hist = h
+	m.mu.Unlock()
 }
 
 // Distance is the great-circle distance in km between two Maidenhead grids

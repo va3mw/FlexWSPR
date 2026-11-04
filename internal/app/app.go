@@ -87,6 +87,9 @@ func (a *App) findRadio(ctx context.Context) (string, error) {
 	defer cancel()
 	info, err := flex.Discover(dctx, a.cfg.Radio.Serial)
 	if err != nil {
+		if a.cfg.Radio.Serial != "" {
+			return "", fmt.Errorf("no radio with serial %s found by discovery (set the radio's IP address in Settings, or remove serial from the config file): %w", a.cfg.Radio.Serial, err)
+		}
 		return "", fmt.Errorf("no radio found by discovery (set the radio's IP address to skip it): %w", err)
 	}
 	a.log.Info("found radio", "model", info.Model, "nickname", info.Nickname, "serial", info.Serial,
@@ -336,6 +339,7 @@ func (a *App) receiveIQ(c *net.UDPConn, radio net.IP, sid *atomic.Uint32, wantCe
 		buf     = make([]byte, 16384)
 		lostTot int
 		got     bool
+		curSid  uint32
 	)
 	for {
 		c.SetReadDeadline(time.Now().Add(10 * time.Second))
@@ -353,6 +357,11 @@ func (a *App) receiveIQ(c *net.UDPConn, radio net.IP, sid *atomic.Uint32, wantCe
 		p, err := flex.ParseVITA(buf[:n])
 		if err != nil || p.StreamID != sid.Load() {
 			continue
+		}
+		if p.StreamID != curSid {
+			// A new stream after a band change: its packet count starts
+			// afresh, so nothing was lost.
+			curSid, last = p.StreamID, -1
 		}
 		rate := flex.IQRate(p.PacketClass)
 		if rate == 0 {
@@ -380,6 +389,12 @@ func (a *App) receiveIQ(c *net.UDPConn, radio net.IP, sid *atomic.Uint32, wantCe
 		lost := 0
 		if last >= 0 {
 			lost = (int(p.Count) - last - 1 + 16) % 16
+		}
+		switch {
+		case lost == 15:
+			continue // a duplicate (or one that arrived late): already counted
+		case lost > 8:
+			lost = 0 // out of order, not lost: the 4-bit count can't tell how many
 		}
 		last = int(p.Count)
 		iq = iq[:0]

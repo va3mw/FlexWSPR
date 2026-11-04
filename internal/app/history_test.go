@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/va3mw/FlexWSPR/internal/config"
 )
 
 func TestHistory(t *testing.T) {
@@ -44,5 +46,21 @@ func TestHistory(t *testing.T) {
 	}
 	if len(s.Stations) != 2 || s.Calls != 2 {
 		t.Fatalf("stations %+v", s.Stations)
+	}
+}
+
+func TestHistoryReloadsOnGridChange(t *testing.T) {
+	dir := t.TempDir()
+	t0 := time.Now().UTC().Truncate(2 * time.Minute).Add(-10 * time.Minute)
+	os.WriteFile(filepath.Join(dir, "spots.txt"),
+		[]byte(t0.Format("060102 1504")+"  -22   0.3   14.097106 G4HSB        IO94    23   0\n"), 0o644)
+	cfg := &config.Config{Grid: "FN03", DataDir: dir, SpotsFile: filepath.Join(dir, "spots.txt")}
+	var m monitor
+	m.loadHistory(cfg)
+	km1 := m.summary().Stations[0].Km
+	cfg.Grid = "EM10"
+	m.loadHistory(cfg)
+	if km2 := m.summary().Stations[0].Km; km2 == km1 || km2 == 0 {
+		t.Fatalf("distance not redone for the new grid: %d then %d", km1, km2)
 	}
 }

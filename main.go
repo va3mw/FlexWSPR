@@ -23,7 +23,7 @@ import (
 	"github.com/va3mw/FlexWSPR/internal/wspr"
 )
 
-var version = "0.5.2" // set by the build scripts
+var version = "0.5.3" // set by the build scripts
 
 func main() {
 	cfgPath := flag.String("config", "", "configuration file (default: "+config.DefaultConfigPath()+

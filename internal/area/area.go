@@ -90,7 +90,10 @@ func New(userAgent string) *Client {
 }
 
 // Get returns the report for the area around lat/lon, fetching it when the
-// cached one is old. Only one fetch runs at a time; others wait for it.
+// cached one is old. Only one fetch runs at a time; others wait for it. The
+// fetch is shared by every page, so it runs on its own timeout rather than
+// ctx: a page closed mid-fetch does not cancel it for the others. ctx only
+// limits how long this caller waits for its turn.
 func (c *Client) Get(ctx context.Context, grid string, lat, lon float64, radiusKm int) (*Report, error) {
 	select {
 	case c.busy <- struct{}{}:
@@ -106,37 +109,42 @@ func (c *Client) Get(ctx context.Context, grid string, lat, lon float64, radiusK
 		c.key, c.rep, c.next, c.dayN = key, nil, time.Time{}, time.Time{}
 	}
 	rep := c.rep
-	needRecent, needDay := now.After(c.next), now.After(c.dayN)
+	needRecent, needDay := rep == nil || now.After(c.next), rep == nil || now.After(c.dayN)
 	c.mu.Unlock()
-	if rep != nil && !needRecent && !needDay {
-		return rep, nil
+	if !needRecent && !needDay {
+		return result(rep)
 	}
 
 	n := &Report{Grid: grid, RadiusKm: radiusKm, Window: int(recentWindow / time.Minute)}
 	if rep != nil {
 		*n = *rep
 	}
-	var errs []error
-	needRecent, needDay = needRecent || rep == nil, needDay || rep == nil
-	okRecent, okDay := false, false
+	fctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	var (
+		wg                sync.WaitGroup
+		errRecent, errDay error
+		bands             []Band
+		hours             []time.Time
+		day               map[string][]Hour
+	)
 	if needRecent {
-		bands, err := c.recent(ctx, lat, lon, radiusKm)
-		if err != nil {
-			errs = append(errs, err)
-		} else {
-			n.Bands, n.Fetched, okRecent = bands, now, true
-		}
+		wg.Add(1)
+		go func() { defer wg.Done(); bands, errRecent = c.recent(fctx, lat, lon, radiusKm) }()
 	}
 	if needDay {
-		hours, day, err := c.day(ctx, lat, lon, radiusKm, now)
-		if err != nil {
-			errs = append(errs, err)
-		} else {
-			n.Hours, n.Day, n.DayAt, okDay = hours, day, now, true
-		}
+		wg.Add(1)
+		go func() { defer wg.Done(); hours, day, errDay = c.day(fctx, lat, lon, radiusKm, now) }()
+	}
+	wg.Wait()
+	if needRecent && errRecent == nil {
+		n.Bands, n.Fetched = bands, now
+	}
+	if needDay && errDay == nil {
+		n.Hours, n.Day, n.DayAt = hours, day, now
 	}
 	n.Error = ""
-	if err := errors.Join(errs...); err != nil {
+	if err := errors.Join(errRecent, errDay); err != nil {
 		n.Error = err.Error()
 	}
 	c.mu.Lock()
@@ -145,20 +153,25 @@ func (c *Client) Get(ctx context.Context, grid string, lat, lon float64, radiusK
 	// After a failure try again in a minute rather than at once.
 	if needRecent {
 		c.next = now.Add(recentEvery)
-		if !okRecent {
+		if errRecent != nil {
 			c.next = now.Add(time.Minute)
 		}
 	}
 	if needDay {
 		c.dayN = now.Add(dayEvery)
-		if !okDay {
+		if errDay != nil {
 			c.dayN = now.Add(time.Minute)
 		}
 	}
-	if c.rep.Bands == nil && c.rep.Day == nil && n.Error != "" {
-		return c.rep, errors.New(n.Error)
+	return result(n)
+}
+
+// result returns a cached report, or its error when it holds no data at all.
+func result(r *Report) (*Report, error) {
+	if r.Bands == nil && r.Day == nil && r.Error != "" {
+		return r, errors.New(r.Error)
 	}
-	return c.rep, nil
+	return r, nil
 }
 
 // near is the SQL condition for a path with either end within r km.

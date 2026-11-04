@@ -1,8 +1,8 @@
 # Build FlexWSPR into dist\: the headless program (with its web page) for
 # Debian x86-64, Raspberry Pi 64/32-bit and Windows, plus the Windows desktop
 # app. The Linux desktop app must be built on Linux (see build.sh).
-# Usage: .\build.ps1 [-Version 0.5.2]
-param([string]$Version = "0.5.2")
+# Usage: .\build.ps1 [-Version 0.5.3]
+param([string]$Version = "0.5.3")
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 New-Item -ItemType Directory -Force dist | Out-Null

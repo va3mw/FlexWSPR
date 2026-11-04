@@ -141,13 +141,13 @@ the stronger signal still ranks higher.
 With Go 1.26:
 
 ```bash
-./build.sh 0.5.2
+./build.sh 0.5.3
 ```
 
 or on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.5.2
+.\build.ps1 -Version 0.5.3
 ```
 
 | File in `dist/` | For |
@@ -163,7 +163,7 @@ The Linux desktop app uses GTK and WebKit, so build it on the Linux machine:
 
 ```bash
 sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
-./build.sh 0.5.2
+./build.sh 0.5.3
 ```
 
 ## Run on Windows

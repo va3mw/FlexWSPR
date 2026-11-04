@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -134,6 +135,14 @@ func Handler(st *app.Station, opt Options) http.Handler {
 // otherwise post to http://localhost:8080 from the user's browser.
 func sameOrigin(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Some reads have effects outside this machine (/api/area asks
+		// wspr.live, /api/radios listens for radios). Browsers mark requests
+		// made by other sites' pages; refuse those. Other sites cannot read
+		// the answers anyway, so the page itself loses nothing.
+		if r.Header.Get("Sec-Fetch-Site") == "cross-site" && strings.HasPrefix(r.URL.Path, "/api/") {
+			http.Error(w, "cross-site request refused", http.StatusForbidden)
+			return
+		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			if ct := r.Header.Get("Content-Type"); ct != "application/json" {
 				http.Error(w, "send JSON", http.StatusUnsupportedMediaType)

@@ -100,7 +100,6 @@ function renderStatus(s) {
   $("#uploadQ").textContent = s.upload ? (s.upload_queue ? `${s.upload_queue} waiting to send` : "queue empty") : "turn on in Settings";
 
   // Best signal: highest score since start (see Score in status.go)
-  const fmtScore = (v) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1);
   const watts = (dbm) => { const w = Math.pow(10, (dbm - 30) / 10); return w >= 1 ? w.toFixed(w < 10 ? 1 : 0) + " W" : Math.round(w * 1000) + " mW"; };
   if (s.best) {
     const b = s.best;
@@ -365,6 +364,9 @@ function readSettings() {
     setPath(c, el.name, v);
   }
   c.web.listen = readWeb();
+  // The serial only picks a radio during discovery; with an IP set it would
+  // just linger unseen, so drop it.
+  if (c.radio.ip) c.radio.serial = "";
   c.antennas = {};
   $$("#antgrid select").forEach((sel) => { if (sel.value) c.antennas[sel.dataset.band] = sel.value; });
   return c;

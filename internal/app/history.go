@@ -33,7 +33,7 @@ type histCycle struct {
 type history struct {
 	cycles []histCycle // oldest first
 	spots  []SpotInfo  // oldest first
-	loaded string      // data folder loaded from
+	loaded string      // what it was loaded from: data folder, spots file and grid
 }
 
 func (h *history) trim(now time.Time) {

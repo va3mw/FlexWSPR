@@ -172,3 +172,19 @@ func TestServerFollowsSettings(t *testing.T) {
 		t.Error("still serving after off")
 	}
 }
+
+func TestCrossSiteReadRefused(t *testing.T) {
+	st, _ := station(t)
+	h := Handler(st, Options{})
+	for _, site := range []string{"cross-site", "same-origin", ""} {
+		r := httptest.NewRequest("GET", "/api/status", nil)
+		if site != "" {
+			r.Header.Set("Sec-Fetch-Site", site)
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if want := site == "cross-site"; (w.Code == http.StatusForbidden) != want {
+			t.Errorf("Sec-Fetch-Site %q: got %d", site, w.Code)
+		}
+	}
+}
