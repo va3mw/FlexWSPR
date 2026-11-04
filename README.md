@@ -12,6 +12,11 @@ from your own receiver and from the public WSPR database.
 **FlexWSPR is receive only.** It never keys the radio, and there are no plans
 to add a transmit feature. To transmit WSPR, use WSJT-X.
 
+**SmartSDR does not need to be running.** FlexWSPR talks to the radio
+directly over the network and sets up its own panadapter and DAX IQ stream,
+so it needs neither SmartSDR nor the DAX program. It can also run alongside
+SmartSDR if the radio has a free client connection.
+
 It comes two ways, sharing one engine and one GUI:
 
 | Program | GUI | For |

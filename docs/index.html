@@ -86,6 +86,7 @@ footer { margin-top: 48px; padding: 24px 0 40px; border-top: 1px solid var(--lin
       <a class="btn ghost" href="https://github.com/va3mw/FlexWSPR">Source on GitHub</a>
     </div>
     <p class="small"><b style="color:var(--aub-ink)">Receive only:</b> FlexWSPR never keys the radio, and there are no plans to add transmit. To transmit WSPR, use WSJT-X.</p>
+    <p class="small"><b style="color:var(--aub-ink)">No SmartSDR needed:</b> FlexWSPR talks to the radio directly, so SmartSDR and DAX don't have to be running.</p>
     <p class="small">Free and open source (MIT). Windows 10/11, Debian, Raspberry Pi OS. Needs a FLEX-6000 series radio and WSJT-X.</p>
   </div>
 </header>
@@ -214,7 +215,7 @@ sudo systemctl enable --now flexwspr</code></pre>
   <h3>Can it transmit WSPR?</h3>
   <p>No. FlexWSPR is receive only: it never keys the radio, and there are no plans to add a transmit feature. To transmit WSPR, use WSJT-X.</p>
   <h3>Does it need SmartSDR or DAX running?</h3>
-  <p>No. FlexWSPR talks to the radio directly over the network. Don't run another DAX IQ program on the same IQ channel (channel 1 by default; you can change it in Settings).</p>
+  <p>No. FlexWSPR talks to the radio directly over the network and sets up its own panadapter and DAX IQ stream, so neither SmartSDR nor the DAX program needs to be running. It can also run alongside SmartSDR if the radio has a free client connection. Don't run another DAX IQ program on the same IQ channel (channel 1 by default; you can change it in Settings).</p>
   <h3>Nothing decodes. What should I check?</h3>
   <p>First, the clock: WSPR needs your PC clock within about one second. Install chrony on Linux; on Windows, check with <code>w32tm /query /status</code>. Then check that the antenna is right for the band. If you still never get a decode, try <i>Flip Q in .c2 files</i>, then <i>Swap I and Q</i>, in Settings.</p>
   <h3>What is sent over the internet?</h3>
