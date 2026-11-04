@@ -176,3 +176,39 @@ legend { font-weight: 700; padding: 0 4px; }
 .mode input { margin-top: 3px; }
 #rotCycles { width: 70px; }
 #rotBands { margin: 8px 0; }
+
+/* Openings */
+:root { --lv-quiet: #ebe8eb; --lv-local: #bfe3f5; --lv-open: #2eb67d; --lv-dx: #3f0e40; }
+@media (prefers-color-scheme: dark) { :root { --lv-quiet: #2c2d30; --lv-local: #1d4f6e; --lv-open: #1e8a5b; --lv-dx: #8e3a8f; } }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.tile { border-radius: 10px; padding: 10px 12px; border: 1px solid var(--line); background: var(--panel); border-left: 6px solid var(--lv-quiet); min-width: 0; }
+.tile.local { border-left-color: var(--lv-local); }
+.tile.open { border-left-color: var(--lv-open); background: color-mix(in srgb, var(--lv-open) 10%, var(--panel)); }
+.tile.dx { border-left-color: var(--lv-dx); background: color-mix(in srgb, var(--lv-dx) 12%, var(--panel)); }
+.tile.cur { outline: 2px solid var(--accent); outline-offset: -1px; }
+.tile .tb { display: flex; justify-content: space-between; align-items: baseline; }
+.tile .tb b { font-size: 20px; }
+.tile .tb span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+.tile.open .tb span { color: var(--lv-open); }
+.tile.dx .tb span { color: var(--lv-dx); }
+@media (prefers-color-scheme: dark) { .tile.dx .tb span { color: #d08fd1; } }
+.tile .tm { font-size: 13px; margin-top: 2px; }
+.tile .ts, .tile .th { font-size: 12px; color: var(--muted); min-height: 1.2em; }
+.tile .th { margin-top: 4px; }
+.tile.cur .th { color: var(--accent); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; }
+.legend i.lv { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -2px; }
+.lv.quiet, .hc.quiet { background: var(--lv-quiet); }
+.lv.local, .hc.local { background: var(--lv-local); color: #1d1c1d; }
+.lv.open, .hc.open { background: var(--lv-open); color: #fff; }
+.lv.dx, .hc.dx { background: var(--lv-dx); color: #fff; }
+@media (prefers-color-scheme: dark) { .hc.local { color: #fff; } }
+.heat { display: grid; grid-template-columns: 52px repeat(24, minmax(18px, 1fr)); gap: 2px; overflow-x: auto; }
+.heat .hb { font-size: 12px; font-weight: 600; align-self: center; }
+.heat .hh { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hc { height: 24px; border-radius: 3px; font-size: 10px; display: flex; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums; overflow: hidden; color: var(--muted); }
+.hc.none { background: repeating-linear-gradient(45deg, transparent 0 3px, var(--line) 3px 4px); }
+.split2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 1000px) { .split2 { grid-template-columns: 1fr; } }
+.split2 .scroll { max-height: 50vh; }

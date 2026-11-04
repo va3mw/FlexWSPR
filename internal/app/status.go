@@ -2,6 +2,7 @@ package app
 
 import (
 	"math"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -97,8 +98,9 @@ type Status struct {
 
 // monitor collects what the station is doing.
 type monitor struct {
-	mu sync.Mutex
-	st Status
+	mu   sync.Mutex
+	st   Status
+	hist history
 }
 
 func (m *monitor) set(fn func(s *Status)) {
@@ -151,9 +153,9 @@ func (m *monitor) cycle(ci CycleInfo, spots []wspr.Spot, myGrid string) {
 		for i := len(spots) - 1; i >= 0; i-- { // newest first, keep wsprd order within a cycle
 			sp := spots[i]
 			si := SpotInfo{Time: sp.Start, Band: ci.Band, Call: sp.Call, Grid: sp.Grid,
-				SNR: sp.SNR, DT: sp.DT, FreqHz: sp.FreqHz, Drift: sp.Drift, DBm: sp.DBm, Km: Distance(myGrid, sp.Grid)}
-			if si.Km > 0 && si.Call != "" {
-				si.Score, si.HasScore = math.Round(Score(si.SNR, si.DBm, si.Km)*10)/10, true
+				SNR: sp.SNR, DT: sp.DT, FreqHz: sp.FreqHz, Drift: sp.Drift, DBm: sp.DBm}
+			scoreSpot(&si, myGrid)
+			if si.HasScore {
 				if s.Best == nil || si.Score > s.Best.Score {
 					b := si
 					s.Best = &b
@@ -168,11 +170,36 @@ func (m *monitor) cycle(ci CycleInfo, spots []wspr.Spot, myGrid string) {
 			add = append(add, si)
 			s.BandSpots[ci.Band]++
 		}
+		if ci.Error == "" {
+			m.hist.cycles = append(m.hist.cycles, histCycle{t: ci.Start, band: ci.Band, spots: ci.Spots})
+			for i := len(add) - 1; i >= 0; i-- {
+				m.hist.spots = append(m.hist.spots, add[i])
+			}
+			m.hist.trim(time.Now())
+		}
 		s.Spots = append(add, s.Spots...)
 		if len(s.Spots) > keepSpots {
 			s.Spots = s.Spots[:keepSpots]
 		}
 	})
+}
+
+// summary is the last 24 hours heard here.
+func (m *monitor) summary() Summary {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.hist.summary(time.Now())
+}
+
+// loadHistory reloads the last day from the data folder, once per folder.
+func (m *monitor) loadHistory(cfg *config.Config) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.hist.loaded == cfg.DataDir {
+		return
+	}
+	m.hist.load(cfg.SpotsFile, filepath.Join(cfg.DataDir, CyclesFile), cfg.Grid, time.Now())
+	m.hist.loaded = cfg.DataDir
 }
 
 // Distance is the great-circle distance in km between two Maidenhead grids

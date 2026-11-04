@@ -46,6 +46,10 @@ web:
   listen: ":8080"   # the headless program's web page; "off" to turn it off.
                     # Windows default: 127.0.0.1:8080 (this PC only)
 
+area:               # Openings tab: what stations near you hear, from wspr.live
+  enabled: true
+  radius_km: 500    # paths with either end within this distance of your grid
+
 data_dir: /var/lib/flexwspr
 keep_c2: false  # keep each cycle's .c2 file (about 360 kB each)
 debug: false

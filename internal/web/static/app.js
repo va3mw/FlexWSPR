@@ -32,6 +32,7 @@ function showTab(name) {
   $$(".tab").forEach((t) => t.classList.toggle("on", t.id === "tab-" + name));
   try { localStorage.setItem("tab", name); } catch {}
   if (name === "log") pollLog();
+  if (name === "openings") pollOpenings(true);
 }
 
 // ---------- clock ----------
@@ -151,6 +152,111 @@ function renderSpots() {
 }
 $("#spotBand").addEventListener("change", () => { lastSpotKey = ""; renderSpots(); });
 
+// ---------- openings ----------
+// What a band is doing. Heard here (one receiver): by the farthest spot.
+// In the area: by how many paths are long, so one odd path does not count.
+const level = (km, n) => (!n ? "quiet" : km >= 5000 ? "dx" : km >= 1000 ? "open" : "local");
+// DX: 3+ paths over 5000 km making at least 5% of all; open: 3+ over
+// 1000 km making at least 10%. Busy bands always have a few long paths.
+const areaLevel = (a) => {
+  const n = a ? a.p || a.paths || 0 : 0;
+  return !n ? "quiet" : a.k5 >= 3 && a.k5 >= n * 0.05 ? "dx" : a.k1 >= 3 && a.k1 >= n * 0.1 ? "open" : "local";
+};
+const pct = (k, n) => Math.round((100 * k) / n) + "%";
+const levelWord = { quiet: "Quiet", local: "Local", open: "Open", dx: "DX" };
+const showBands = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"];
+const kmText = (n) => n.toLocaleString() + " km";
+const ago = (t, now) => {
+  const m = Math.round((new Date(now) - new Date(t)) / 60000);
+  return m < 1 ? "just now" : m < 60 ? m + " min ago" : Math.floor(m / 60) + " h " + (m % 60) + " min ago";
+};
+const fmtScore = (v) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1);
+let summary = null, area = null, areaErr = "";
+
+async function pollOpenings(force) {
+  if (force !== true && !$("#tab-openings").classList.contains("on")) return;
+  try { summary = await api("/api/summary"); } catch {}
+  try { area = await api("/api/area"); areaErr = area.error || ""; }
+  catch (e) { area = null; areaErr = e.message; }
+  renderOpenings();
+}
+
+function renderOpenings() {
+  if (!summary) return;
+  const now = summary.now;
+  const here = Object.fromEntries((summary.bands || []).map((b) => [b.band, b]));
+  const ab = Object.fromEntries(((area && area.bands) || []).map((b) => [b.band, b]));
+  const pos = (b) => { const i = bands.findIndex((x) => x.name === b); return i < 0 ? 99 : i; };
+  const list = [...new Set([...showBands, ...Object.keys(here).filter((b) => pos(b) < 99)])].sort((a, b) => pos(a) - pos(b));
+  const cur = status && status.state === "running" ? status.band : "";
+
+  // Tiles: the area's last 30 minutes (or this hour here), and what was heard here.
+  $("#tiles").innerHTML = list.map((b) => {
+    const a = ab[b], h = here[b];
+    let lv, main, sub = "";
+    if (area && area.bands) {
+      lv = areaLevel(a);
+      main = a ? `${a.paths.toLocaleString()} paths · ${a.tx} TX · ${a.rx} RX` : "no paths";
+      if (a) sub = `${pct(a.k1, a.paths)} over 1000 km · ${pct(a.k5, a.paths)} over 5000`;
+    } else {
+      const hl = h && h.hours[23];
+      lv = level(hl ? hl.km : 0, hl ? hl.s : 0);
+      main = h && h.last_hour ? `${h.last_hour} spots in the last hour` : "nothing this hour";
+    }
+    const hereTxt = b === cur ? "● listening now"
+      : !h ? "here: not listened to today"
+      : h.last ? `here: last heard ${ago(h.last, now)}` : `here: ${h.cycles} cycles, nothing heard`;
+    const tip = a && a.far ? `Longest path: ${a.far} (${kmText(a.max_km)})` : "";
+    return `<div class="tile ${lv}${b === cur ? " cur" : ""}" title="${esc(tip)}">
+      <div class="tb"><b>${esc(b)}</b><span>${levelWord[lv]}</span></div>
+      <div class="tm">${esc(main)}</div><div class="ts">${esc(sub)}</div>
+      <div class="th">${esc(hereTxt)}</div></div>`;
+  }).join("");
+  const off = cfg && cfg.area && !cfg.area.enabled;
+  $("#areaNote").textContent = area && area.bands
+    ? `Paths with either end within ${area.radius_km} km of ${area.grid}, last ${area.window_min} minutes, from wspr.live · updated ${hhmm(area.fetched)} UTC` + (areaErr ? " · " + areaErr : "")
+    : off ? "Heard here only. Turn on area activity in Settings to see the bands you are not on."
+    : "Heard here only, this hour" + (areaErr ? ` (wspr.live: ${areaErr})` : "");
+
+  // Heat maps: one row per band, one column per UTC hour.
+  const hours = summary.hours;
+  const head = `<div class="hb"></div>` + hours.map((t, i) =>
+    `<div class="hh">${i % 3 === 0 ? String(new Date(t).getUTCHours()).padStart(2, "0") : ""}</div>`).join("");
+  const showArea = !!(area && area.day && area.hours);
+  $("#areaPanel").hidden = !showArea;
+  if (showArea) {
+    const shift = Math.round((new Date(area.hours[0]) - new Date(hours[0])) / 3600000);
+    $("#areaHeat").innerHTML = head + list.map((b) => `<div class="hb">${esc(b)}</div>` + hours.map((t, i) => {
+      const cell = (area.day[b] || [])[i - shift];
+      if (!cell || !cell.p) return `<div class="hc quiet" title="${b} ${hhmm(t)} UTC: no paths"></div>`;
+      const n = cell.p >= 1000 ? Math.round(cell.p / 1000) + "k" : cell.p;
+      return `<div class="hc ${areaLevel(cell)}" title="${b} ${hhmm(t)} UTC: ${cell.p} paths, ${cell.k1} over 1000 km, ${cell.k5} over 5000 km, farthest ${kmText(cell.km)}">${n}</div>`;
+    }).join("")).join("");
+    $("#areaHeatNote").textContent = `paths within ${area.radius_km} km each UTC hour`;
+  }
+  const hereBands = list.filter((b) => here[b]).concat(Object.keys(here).filter((b) => pos(b) === 99));
+  $("#hereHeat").innerHTML = hereBands.length ? head + hereBands.map((b) => `<div class="hb">${esc(b)}</div>` + here[b].hours.map((cell, i) => {
+    const t = hhmm(hours[i]);
+    if (!cell.c && !cell.s) return `<div class="hc none" title="${b} ${t} UTC: not listening"></div>`;
+    if (!cell.s) return `<div class="hc quiet" title="${b} ${t} UTC: ${cell.c} cycles, nothing heard">·</div>`;
+    return `<div class="hc ${level(cell.km, cell.s)}" title="${b} ${t} UTC: ${cell.s} spots, ${cell.n} calls` +
+      `${cell.km ? ", farthest " + kmText(cell.km) : ""}${cell.c ? " in " + cell.c + " cycles" : ""}">${cell.s}</div>`;
+  }).join("")).join("") : `<p class="muted">Nothing decoded in the last 24 hours yet.</p>`;
+  $("#hereNote").textContent = `${summary.cycles} cycles · ${summary.spots} spots · ${summary.calls} calls`;
+
+  $("#bandSum tbody").innerHTML = (summary.bands || []).map((b) => `<tr>
+    <td><b>${esc(b.band)}</b></td><td class="r">${b.cycles}</td><td class="r">${b.spots}</td><td class="r">${b.calls}</td><td class="r">${b.last_hour}</td>
+    <td>${b.farthest ? `${esc(b.farthest.call)} ${kmText(b.farthest.km)}` : ""}</td>
+    <td>${b.best ? `${esc(b.best.call)} ${fmtScore(b.best.score)}` : ""}</td>
+    <td>${b.last ? hhmm(b.last) + " UTC" : ""}</td></tr>`).join("");
+  const st = summary.stations || [];
+  $("#stationNote").textContent = st.length ? `${st.length}, best score first` : "";
+  $("#stations tbody").innerHTML = st.slice(0, 300).map((s) => `<tr>
+    <td class="call">${esc(s.call)}</td><td>${esc(s.grid)}</td><td class="r">${s.km || ""}</td><td>${esc(s.bands.join(" "))}</td>
+    <td class="r">${s.spots}</td><td class="r">${s.best_snr}</td><td class="r">${s.has_score ? fmtScore(s.score) : ""}</td>
+    <td class="mono">${hhmm(s.last)}</td></tr>`).join("");
+}
+
 // ---------- log ----------
 let logSeq = 0;
 async function pollLog() {
@@ -253,7 +359,7 @@ function readSettings() {
     let v;
     if (el.type === "checkbox") v = el.checked;
     else if (el.name === "wsprd.args") v = el.value.trim() ? el.value.trim().split(/\s+/) : [];
-    else if (el.name === "daxiq.channel" || el.name === "daxiq.rate") v = parseInt(el.value, 10);
+    else if (el.name === "daxiq.channel" || el.name === "daxiq.rate" || el.name === "area.radius_km") v = parseInt(el.value, 10) || 0;
     else v = el.value.trim();
     setPath(c, el.name, v);
   }
@@ -505,4 +611,5 @@ $("#saveSched").addEventListener("click", async () => {
   showTab(tab);
   setInterval(pollStatus, 2000);
   setInterval(pollLog, 2000);
+  setInterval(pollOpenings, 60000);
 })();

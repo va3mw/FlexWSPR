@@ -2,12 +2,14 @@ package app
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/va3mw/FlexWSPR/internal/area"
 	"github.com/va3mw/FlexWSPR/internal/config"
 	"github.com/va3mw/FlexWSPR/internal/upload"
 )
@@ -26,6 +28,7 @@ type Station struct {
 	apply chan struct{}
 	onCfg []func(*config.Config)
 	up    *upload.Uploader
+	area  *area.Client
 	level *slog.LevelVar
 	log   *slog.Logger
 }
@@ -35,7 +38,7 @@ type Station struct {
 // (and to the ring the GUI shows).
 func NewStation(path string, cfg *config.Config, saved bool, version string, out io.Writer) *Station {
 	s := &Station{Version: version, Logs: NewLogRing(400), path: path, cfg: cfg, saved: saved,
-		apply: make(chan struct{}, 1), level: new(slog.LevelVar)}
+		apply: make(chan struct{}, 1), level: new(slog.LevelVar), area: area.New("FlexWSPR/" + version)}
 	s.setLevel(cfg)
 	s.log = slog.New(slog.NewTextHandler(io.MultiWriter(out, s.Logs), &slog.HandlerOptions{Level: s.level}))
 	s.mon.st = Status{Version: version, State: StateStopped, ConfigPath: path, ConfigSaved: saved}
@@ -123,6 +126,7 @@ func (s *Station) Run(ctx context.Context) {
 }
 
 func (s *Station) runOnce(ctx context.Context, cfg *config.Config) {
+	s.mon.loadHistory(cfg)
 	if !cfg.Ready() {
 		s.mon.state(StateSetup, "Enter your callsign and grid in Settings to start.")
 		s.log.Info("waiting for setup: callsign and grid are not set", "config", s.path)
@@ -148,6 +152,25 @@ func (s *Station) runOnce(ctx context.Context, cfg *config.Config) {
 	a.showBand(hz)
 	a.Run(ctx)
 	s.log.Info("FlexWSPR stopped")
+}
+
+// Summary is the last 24 hours heard here, for the Openings tab.
+func (s *Station) Summary() Summary { return s.mon.summary() }
+
+// ErrAreaOff is returned by Area when it is turned off in the settings.
+var ErrAreaOff = errors.New("area activity is off in Settings")
+
+// Area returns what stations near this grid are hearing, from wspr.live.
+func (s *Station) Area(ctx context.Context) (*area.Report, error) {
+	c := s.Config()
+	if !c.Area.Enabled {
+		return nil, ErrAreaOff
+	}
+	lat, lon, ok := gridLatLon(c.Grid)
+	if !ok {
+		return nil, errors.New("set your grid in Settings")
+	}
+	return s.area.Get(ctx, c.Grid, lat, lon, c.Area.RadiusKm)
 }
 
 // OnConfig registers fn to be called with each newly applied configuration.

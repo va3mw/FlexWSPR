@@ -437,6 +437,7 @@ func (a *App) decodeCycle(ctx context.Context, cy wspr.Cycle) {
 	}
 	info.Spots = len(spots)
 	a.mon.cycle(info, spots, a.cfg.Grid)
+	a.logCycle(info)
 	a.log.Info("cycle decoded", "cycle", cy.Start.Format("15:04"), "band", info.Band, "spots", len(spots),
 		"took", time.Since(t0).Round(100*time.Millisecond), "gap_samples", cy.Gaps)
 	if a.up != nil {
@@ -461,6 +462,20 @@ func (a *App) decodeCycle(ctx context.Context, cy wspr.Cycle) {
 	if f != nil {
 		f.Close()
 	}
+}
+
+// logCycle adds the cycle to cycles.txt, so the Openings tab knows after a
+// restart which bands were listened to.
+func (a *App) logCycle(c CycleInfo) {
+	a.spotMu.Lock()
+	defer a.spotMu.Unlock()
+	f, err := os.OpenFile(filepath.Join(a.cfg.DataDir, CyclesFile), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		a.log.Error("cycle log", "err", err)
+		return
+	}
+	fmt.Fprintln(f, cycleLine(c))
+	f.Close()
 }
 
 // openUDP binds the local VITA socket, starting at 4991 like FlexLib.

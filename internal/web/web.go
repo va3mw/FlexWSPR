@@ -43,6 +43,21 @@ func Handler(st *app.Station, opt Options) http.Handler {
 	mux.HandleFunc("GET /api/status", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, st.Status())
 	})
+	mux.HandleFunc("GET /api/summary", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, st.Summary())
+	})
+	mux.HandleFunc("GET /api/area", func(w http.ResponseWriter, r *http.Request) {
+		rep, err := st.Area(r.Context())
+		if err != nil {
+			code := http.StatusBadGateway
+			if errors.Is(err, app.ErrAreaOff) {
+				code = http.StatusNotFound
+			}
+			writeJSON(w, code, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, rep)
+	})
 	mux.HandleFunc("GET /api/config", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"config": st.Config(), "local": opt.Local})
 	})

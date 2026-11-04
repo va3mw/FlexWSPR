@@ -4,7 +4,8 @@ A WSPR receiver for FlexRadio, for Windows, Debian and Raspberry Pi. It
 connects to the radio, opens a DAX IQ stream, records each two-minute cycle
 and decodes it with `wsprd` (from WSJT-X). It can rotate through bands, pick a
 receive antenna per band, rank the best signal heard and upload spots to
-wsprnet.org.
+wsprnet.org. The Openings tab shows which bands are open from your area,
+from your own receiver and from the public WSPR database.
 
 It comes two ways, sharing one engine and one GUI:
 
@@ -21,6 +22,35 @@ It comes two ways, sharing one engine and one GUI:
 - **Best signal:** the highest-scoring spot since start, and the best on each
   band (see [Best signal](#best-signal)).
 - The last cycles and a spot table with distance, filterable by band.
+
+**Openings**: a screen to leave up on the desktop. It refreshes every minute.
+- **Bands now:** one tile per band, 160 m to 6 m, rated from the last 30
+  minutes of spots at [wspr.live](https://wspr.live) whose transmitter or
+  receiver is within 500 km of your grid (set in Settings). So it covers
+  bands FlexWSPR is not on. Each tile also says when you last heard something
+  on that band.
+
+  | Rating | Means |
+  |---|---|
+  | Quiet | No paths |
+  | Local | Paths, but few over 1000 km |
+  | Open | At least 3 paths over 1000 km, and 10% or more of all paths |
+  | DX | At least 3 paths over 5000 km, and 5% or more of all paths |
+
+  Busy bands always carry a few long paths from big stations, hence the
+  percentages. Hover over a tile for the longest path.
+- **Your area, last 24 hours:** the same rating for each band and UTC hour,
+  from wspr.live, so you can see when each band usually opens.
+- **Heard here, last 24 hours:** your own spots per band and hour, coloured
+  by the farthest station heard. Striped cells are hours FlexWSPR was not on
+  that band; grey ones it listened and heard nothing.
+- **By band** and **Stations heard** tables for the last 24 hours.
+
+The 24-hour history is reloaded from `spots.txt` and `cycles.txt` (one line
+per decoded cycle, new in 0.5.0) in the data folder when FlexWSPR starts.
+wspr.live is asked at most every 5 minutes for the last 30 minutes and every
+15 minutes for the day, however many pages are open; turn it off in
+**Settings → Openings**.
 
 **Schedule**: pick one of three modes, then **Save and apply**.
 
@@ -92,13 +122,13 @@ the stronger signal still ranks higher.
 With Go 1.26:
 
 ```bash
-./build.sh 0.4.2
+./build.sh 0.5.0
 ```
 
 or on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.4.2
+.\build.ps1 -Version 0.5.0
 ```
 
 | File in `dist/` | For |
@@ -114,7 +144,7 @@ The Linux desktop app uses GTK and WebKit, so build it on the Linux machine:
 
 ```bash
 sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
-./build.sh 0.4.2
+./build.sh 0.5.0
 ```
 
 ## Run on Windows
@@ -207,5 +237,6 @@ Files from 0.3 with `schedule: enabled: true` still load, as time slots.
 | `internal/flex` | Discovery, TCP API client, VITA-49 / DAX IQ parsing |
 | `internal/dsp` | NCO and decimation to 375 Hz |
 | `internal/wspr` | Cycle capture, `.c2` writer, `wsprd` runner and parser |
+| `internal/area` | wspr.live queries for the Openings tab |
 | `internal/upload` | wsprnet.org uploader with a saved retry queue |
 | `build.sh`, `build.ps1` | Builds into `dist/` |

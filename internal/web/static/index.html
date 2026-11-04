@@ -22,6 +22,7 @@
 
 <nav class="tabs" role="tablist">
   <button role="tab" data-tab="spots" class="on">Spots</button>
+  <button role="tab" data-tab="openings">Openings</button>
   <button role="tab" data-tab="schedule">Schedule</button>
   <button role="tab" data-tab="settings">Settings</button>
   <button role="tab" data-tab="log">Log</button>
@@ -57,6 +58,44 @@
           <tbody></tbody>
         </table></div>
         <p class="empty muted" id="noSpots">No spots yet. The first cycle decodes about two minutes after FlexWSPR connects.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Openings -->
+  <section id="tab-openings" class="tab">
+    <div class="panel">
+      <h2>Bands now <span class="muted small" id="areaNote"></span></h2>
+      <div class="tiles" id="tiles"></div>
+      <div class="legend small muted">
+        <span><i class="lv quiet"></i>Quiet: nothing heard</span><span><i class="lv local"></i>Local: short paths only</span>
+        <span><i class="lv open"></i>Open: 10% of paths over 1000 km</span><span><i class="lv dx"></i>DX: 5% of paths over 5000 km</span>
+        <span>Heard here: by the farthest station.</span>
+      </div>
+    </div>
+    <div class="panel" id="areaPanel">
+      <h2>Your area, last 24 hours <span class="muted small" id="areaHeatNote"></span></h2>
+      <div class="heat" id="areaHeat"></div>
+    </div>
+    <div class="panel">
+      <h2>Heard here, last 24 hours <span class="muted small" id="hereNote"></span></h2>
+      <div class="heat" id="hereHeat"></div>
+      <p class="muted small">Each cell is a UTC hour: the colour is the farthest station heard, the number how many spots. Striped: not listening on that band.</p>
+    </div>
+    <div class="split2">
+      <div class="panel">
+        <h2>By band</h2>
+        <div class="scroll"><table class="t" id="bandSum">
+          <thead><tr><th>Band</th><th class="r">Cycles</th><th class="r">Spots</th><th class="r">Calls</th><th class="r">Last hour</th><th>Farthest</th><th>Best score</th><th>Last heard</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+      <div class="panel">
+        <h2>Stations heard <span class="muted small" id="stationNote"></span></h2>
+        <div class="scroll"><table class="t" id="stations">
+          <thead><tr><th>Call</th><th>Grid</th><th class="r">km</th><th>Bands</th><th class="r">Spots</th><th class="r">Best SNR</th><th class="r">Score</th><th>Last</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
       </div>
     </div>
   </section>
@@ -129,6 +168,12 @@
         <p class="muted small">Per band (switched with the band, between cycles):</p>
         <div class="antgrid" id="antgrid"></div>
         <p class="muted small" id="antNote"></p>
+      </fieldset>
+      <fieldset>
+        <legend>Openings</legend>
+        <label class="check"><input type="checkbox" name="area.enabled"> Show what stations near me hear, from wspr.live</label>
+        <label>Near me means within (km) <input type="number" name="area.radius_km" min="50" max="3000" step="50"></label>
+        <p class="muted small">FlexWSPR asks the public WSPR database at wspr.live every few minutes for paths with either end within this distance of your grid, so the Openings tab also shows bands you are not listening to.</p>
       </fieldset>
       <fieldset>
         <legend>DAX IQ</legend>

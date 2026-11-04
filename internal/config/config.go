@@ -60,6 +60,13 @@ type Config struct {
 		Listen string `yaml:"listen" json:"listen"`
 	} `yaml:"web" json:"web"`
 
+	// Area shows what stations near you are hearing, from the public WSPR
+	// database at wspr.live, on the Openings tab.
+	Area struct {
+		Enabled  bool `yaml:"enabled" json:"enabled"`
+		RadiusKm int  `yaml:"radius_km" json:"radius_km"` // "near": either end of a path within this distance
+	} `yaml:"area" json:"area"`
+
 	DataDir   string `yaml:"data_dir" json:"data_dir"` // .c2 files, wsprd's hashtable, spot log
 	KeepC2    bool   `yaml:"keep_c2" json:"keep_c2"`   // keep each cycle's .c2 after decoding
 	SpotsFile string `yaml:"spots_file" json:"spots_file"`
@@ -83,6 +90,17 @@ var Bands = map[string]int64{
 	"12m":   24924600,
 	"10m":   28124600,
 	"6m":    50293000,
+}
+
+// BandOf names the band a received frequency is in (dial to dial + 3 kHz),
+// or "" if none.
+func BandOf(hz int64) string {
+	for _, n := range BandOrder {
+		if d := hz - Bands[n]; d >= 0 && d <= 3000 {
+			return n
+		}
+	}
+	return ""
 }
 
 // BandOrder lists the band names from low to high, for menus.
@@ -128,6 +146,7 @@ func Default() *Config {
 	c.DAXIQ.Rate = 24000
 	c.Wsprd.Path = DefaultWsprd()
 	c.Web.Listen = DefaultListen
+	c.Area.Enabled, c.Area.RadiusKm = true, 500
 	return c
 }
 
@@ -174,6 +193,12 @@ func (c *Config) Resolve() error {
 		ants[b] = a
 	}
 	c.Antennas = ants
+	if c.Area.RadiusKm <= 0 {
+		c.Area.RadiusKm = 500
+	}
+	if c.Area.RadiusKm < 50 || c.Area.RadiusKm > 3000 {
+		return fmt.Errorf("area.radius_km must be 50-3000, got %d", c.Area.RadiusKm)
+	}
 	hz, err := ParseBand(c.Band)
 	if err != nil {
 		return err
