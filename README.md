@@ -39,11 +39,17 @@ It comes two ways, sharing one engine and one GUI:
 
   Busy bands always carry a few long paths from big stations, hence the
   percentages. Hover over a tile for the longest path.
+
+  ![Openings tab: band tiles rated from wspr.live](docs/openings.png)
 - **Your area, last 24 hours:** the same rating for each band and UTC hour,
   from wspr.live, so you can see when each band usually opens.
+
+  ![Your area over the last 24 hours, by band and UTC hour](docs/your-area.png)
 - **Heard here, last 24 hours:** your own spots per band and hour, coloured
   by the farthest station heard. Striped cells are hours FlexWSPR was not on
   that band; grey ones it listened and heard nothing.
+
+  ![Spots heard here over the last 24 hours, by band and UTC hour](docs/heard-here.png)
 - **By band** and **Stations heard** tables for the last 24 hours.
 
 The 24-hour history is reloaded from `spots.txt` and `cycles.txt` (one line
