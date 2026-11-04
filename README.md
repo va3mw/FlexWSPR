@@ -141,13 +141,13 @@ the stronger signal still ranks higher.
 With Go 1.26:
 
 ```bash
-./build.sh 0.5.1
+./build.sh 0.5.2
 ```
 
 or on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.5.1
+.\build.ps1 -Version 0.5.2
 ```
 
 | File in `dist/` | For |
@@ -163,7 +163,7 @@ The Linux desktop app uses GTK and WebKit, so build it on the Linux machine:
 
 ```bash
 sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
-./build.sh 0.5.1
+./build.sh 0.5.2
 ```
 
 ## Run on Windows
@@ -262,6 +262,7 @@ Files from 0.3 with `schedule: enabled: true` still load, as time slots.
 
 ## Credits
 
+- Written by Michael, VA3MW, and Claude (Anthropic).
 - WSPR and the `wsprd` decoder: Joe Taylor, K1JT, Steve Franke, K9AN, and the
   WSJT development group, in [WSJT-X](https://wsjt.sourceforge.io/) (GPL v3).
   FlexWSPR runs the installed `wsprd` as a separate program and does not
