@@ -67,6 +67,7 @@ function renderStatus(s) {
   $("#state").textContent = stateWords[s.state] || s.state;
   $("#state").className = "pill " + s.state;
   $("#band").textContent = s.band || "–";
+  $("#helpVersion").textContent = "version " + s.version;
   $("#dial").textContent = (s.dial_hz ? mhz(s.dial_hz) + " MHz" : "") + (s.rxant ? " · " + antLabel(s.rxant) : "");
   $("#radio").textContent = s.radio || "–";
   $("#stateText").textContent = s.error || (s.since ? `${stateWords[s.state] || s.state} since ${hhmm(s.since)} UTC` : "");
@@ -415,7 +416,6 @@ $("#findRadios").addEventListener("click", async () => {
     $$("#radios button").forEach((btn) => btn.addEventListener("click", () => {
       const r = list[btn.dataset.i];
       $("#settings").elements["radio.ip"].value = r.IP;
-      $("#settings").elements["radio.serial"].value = r.Serial;
     }));
   } catch (e) {
     $("#findNote").textContent = e.message;

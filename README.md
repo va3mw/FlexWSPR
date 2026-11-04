@@ -77,7 +77,7 @@ against WSJT-X).
 
 **Settings**
 - Callsign, grid, upload to wsprnet.
-- Radio IP (or *Find radios*), serial, DIGU slice on or off.
+- Radio IP (or *Find radios*), DIGU slice on or off.
 - **Receive antenna:** a default, and one for each band. The menus list the
   antennas the radio reports once FlexWSPR is connected (ANT1, ANT2, RXa,
   RXb, XVTa, XVTb on a FLEX-6600).
@@ -85,6 +85,9 @@ against WSJT-X).
 - Saving rewrites the config file and restarts the receiver.
 
 **Log**: the program's log.
+
+**Help**: getting started, what each tab does, troubleshooting, credits and
+the license.
 
 ## Best signal
 
@@ -130,13 +133,13 @@ the stronger signal still ranks higher.
 With Go 1.26:
 
 ```bash
-./build.sh 0.5.0
+./build.sh 0.5.1
 ```
 
 or on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.5.0
+.\build.ps1 -Version 0.5.1
 ```
 
 | File in `dist/` | For |
@@ -152,7 +155,7 @@ The Linux desktop app uses GTK and WebKit, so build it on the Linux machine:
 
 ```bash
 sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
-./build.sh 0.5.0
+./build.sh 0.5.1
 ```
 
 ## Run on Windows
@@ -248,3 +251,21 @@ Files from 0.3 with `schedule: enabled: true` still load, as time slots.
 | `internal/area` | wspr.live queries for the Openings tab |
 | `internal/upload` | wsprnet.org uploader with a saved retry queue |
 | `build.sh`, `build.ps1` | Builds into `dist/` |
+
+## Credits
+
+- WSPR and the `wsprd` decoder: Joe Taylor, K1JT, Steve Franke, K9AN, and the
+  WSJT development group, in [WSJT-X](https://wsjt.sourceforge.io/) (GPL v3).
+  FlexWSPR runs the installed `wsprd` as a separate program and does not
+  include it.
+- [wsprnet.org](https://www.wsprnet.org/) for the spot database FlexWSPR uploads to,
+  and [wspr.live](https://wspr.live/) for the public database behind the
+  Openings tab.
+- FlexRadio for the SmartSDR API and DAX IQ. FlexRadio, SmartSDR and DAX are
+  trademarks of FlexRadio Systems; FlexWSPR is not a FlexRadio product.
+- [Wails](https://wails.io/) (MIT) and [go-yaml](https://github.com/go-yaml/yaml)
+  (MIT and Apache 2.0).
+
+## License
+
+MIT; see [LICENSE](LICENSE).

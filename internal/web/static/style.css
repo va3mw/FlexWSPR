@@ -78,7 +78,7 @@ html, body { margin: 0; background: var(--bg); color: var(--text);
 .pill.error::before { background: #fff; }
 .pill.setup::before, .pill.searching::before, .pill.connecting::before { background: var(--c-yellow); }
 
-.tabs { display: flex; gap: 4px; padding: 6px 16px; background: var(--aub-2); overflow-x: auto; }
+.tabs { display: flex; gap: 4px; padding: 6px 16px; background: var(--aub-2); overflow-x: auto; scrollbar-width: none; }
 .tabs button { border: 0; background: none; color: var(--aub-muted); padding: 6px 14px; font: inherit; font-weight: 600;
   border-radius: 6px; cursor: pointer; }
 .tabs button:hover { background: var(--aub-3); color: var(--aub-ink); }
@@ -212,3 +212,16 @@ legend { font-weight: 700; padding: 0 4px; }
 .split2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 @media (max-width: 1000px) { .split2 { grid-template-columns: 1fr; } }
 .split2 .scroll { max-height: 50vh; }
+
+/* Help */
+.help p, .help li, .help dd { line-height: 1.55; }
+.help ol, .help ul { margin: 0; padding-left: 20px; }
+.help li { margin-bottom: 4px; }
+.help dl { margin: 0; }
+.help dt { font-weight: 700; }
+.help dd { margin: 0 0 8px; color: var(--muted); }
+.help .grid { margin-bottom: 12px; }
+.help .grid .panel { margin-bottom: 0; }
+.help code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+.help a { color: var(--accent); }
+pre.license { font-size: 12px; white-space: pre-wrap; margin: 0; color: var(--muted); }

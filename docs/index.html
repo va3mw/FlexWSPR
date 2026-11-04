@@ -85,7 +85,7 @@ footer { margin-top: 48px; padding: 24px 0 40px; border-top: 1px solid var(--lin
       <a class="btn ghost" href="#download">Raspberry Pi and Linux</a>
       <a class="btn ghost" href="https://github.com/va3mw/FlexWSPR">Source on GitHub</a>
     </div>
-    <p class="small">Free. Windows 10/11, Debian, Raspberry Pi OS. Needs a FLEX-6000 series radio and WSJT-X.</p>
+    <p class="small">Free and open source (MIT). Windows 10/11, Debian, Raspberry Pi OS. Needs a FLEX-6000 series radio and WSJT-X.</p>
   </div>
 </header>
 
@@ -98,6 +98,7 @@ footer { margin-top: 48px; padding: 24px 0 40px; border-top: 1px solid var(--lin
   <a href="#schedule">Schedule</a>
   <a href="#best">Best signal</a>
   <a href="#faq">Questions</a>
+  <a href="#credits">Credits</a>
 </div></nav>
 
 <main class="wrap">
@@ -217,8 +218,19 @@ sudo systemctl enable --now flexwspr</code></pre>
   <p>Only what you turn on. With upload on, your spots go to wsprnet.org. With Openings on, FlexWSPR asks wspr.live about stations near your grid, at most every five minutes. Both can be turned off in Settings.</p>
 </section>
 
+<section id="credits">
+  <h2>Credits and license</h2>
+  <ul>
+    <li><b>WSPR</b> and the <code>wsprd</code> decoder: Joe Taylor, K1JT, Steve Franke, K9AN, and the WSJT development group, as part of <a href="https://wsjt.sourceforge.io/">WSJT-X</a> (GPL v3). FlexWSPR runs the installed <code>wsprd</code> as a separate program and does not include it.</li>
+    <li><a href="https://www.wsprnet.org/">wsprnet.org</a> for the spot database FlexWSPR uploads to, and <a href="https://wspr.live/">wspr.live</a> for the public database behind the Openings tab.</li>
+    <li>FlexRadio for the SmartSDR API and DAX IQ. FlexRadio, SmartSDR and DAX are trademarks of FlexRadio Systems; FlexWSPR is not a FlexRadio product.</li>
+    <li><a href="https://wails.io/">Wails</a> (MIT) for the desktop window and <a href="https://github.com/go-yaml/yaml">go-yaml</a> (MIT and Apache 2.0).</li>
+  </ul>
+  <p>FlexWSPR is released under the <a href="https://github.com/va3mw/FlexWSPR/blob/main/LICENSE">MIT License</a>. Copyright © 2026 Michael, VA3MW.</p>
+</section>
+
 <footer>
-  FlexWSPR by VA3MW. Source, issues and the full README are on <a href="https://github.com/va3mw/FlexWSPR">GitHub</a>. WSPR and <code>wsprd</code> are part of WSJT-X by K1JT and the WSJT development group. FlexRadio, SmartSDR and DAX are trademarks of FlexRadio Systems.
+  FlexWSPR by VA3MW · MIT License · source, issues and the full README on <a href="https://github.com/va3mw/FlexWSPR">GitHub</a>.
 </footer>
 </main>
 </body>

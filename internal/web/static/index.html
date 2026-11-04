@@ -26,6 +26,7 @@
   <button role="tab" data-tab="schedule">Schedule</button>
   <button role="tab" data-tab="settings">Settings</button>
   <button role="tab" data-tab="log">Log</button>
+  <button role="tab" data-tab="help">Help</button>
 </nav>
 
 <main>
@@ -159,7 +160,6 @@
         <label>IP address <input name="radio.ip" placeholder="blank: find it on the LAN" spellcheck="false"></label>
         <div class="row"><button type="button" class="ghost" id="findRadios">Find radios</button><span class="muted small" id="findNote"></span></div>
         <div id="radios" class="radios"></div>
-        <label>Serial <input name="radio.serial" placeholder="only with several radios" spellcheck="false"></label>
         <label class="check"><input type="checkbox" name="create_slice"> Show a DIGU slice on the band</label>
       </fieldset>
       <fieldset>
@@ -207,6 +207,102 @@
       <pre id="log" class="log"></pre>
     </div>
   </section>
+  <!-- Help -->
+  <section id="tab-help" class="tab help">
+    <div class="panel">
+      <h2>FlexWSPR <span class="muted small" id="helpVersion"></span></h2>
+      <p>A WSPR receiver for FlexRadio. It opens its own panadapter and DAX IQ stream on the radio, records each two-minute cycle, decodes it with <code>wsprd</code> from WSJT-X, and can upload the spots to wsprnet.org.
+        Web page: <a href="https://va3mw.github.io/FlexWSPR/" target="_blank" rel="noopener">va3mw.github.io/FlexWSPR</a> ·
+        source and releases: <a href="https://github.com/va3mw/FlexWSPR" target="_blank" rel="noopener">github.com/va3mw/FlexWSPR</a></p>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>Getting started</h2>
+        <ol>
+          <li>Install WSJT-X: FlexWSPR runs its <code>wsprd</code> decoder.</li>
+          <li>In <b>Settings</b>, enter your callsign and grid. Click <b>Find radios</b> and pick yours, or type its IP address.</li>
+          <li>Pick a receive antenna, by default or per band.</li>
+          <li>Tick <b>Upload spots to wsprnet.org</b> to report, then <b>Save and restart</b>.</li>
+          <li>Choose a band or a rotation in <b>Schedule</b>. The first spots come about two minutes after it connects.</li>
+        </ol>
+      </div>
+      <div class="panel">
+        <h2>The tabs</h2>
+        <dl>
+          <dt>Spots</dt><dd>The radio and band now, the next bands, every cycle and spot since start, and the best signal.</dd>
+          <dt>Openings</dt><dd>Which bands are open from your area, from wspr.live and from your own receiver, now and over 24 hours.</dd>
+          <dt>Schedule</dt><dd>One band, a band rotation all day, or bands by UTC time slot.</dd>
+          <dt>Settings</dt><dd>Station, radio, antennas, DAX IQ, Openings, decoder, files and the web page port.</dd>
+          <dt>Log</dt><dd>What FlexWSPR is doing, for troubleshooting.</dd>
+        </dl>
+      </div>
+      <div class="panel">
+        <h2>Best signal score</h2>
+        <p>The SNR a spot would have had from 1 W at 1000 km:</p>
+        <p><code>score = SNR − (dBm − 30) + 20·log10(km ÷ 1000)</code></p>
+        <p class="muted">More transmit power counts against a station, and each doubling of distance adds 6 dB. Distances under 100 km count as 100 km; spots with no grid or a hashed call are not scored.</p>
+      </div>
+      <div class="panel">
+        <h2>Openings ratings</h2>
+        <p>Paths with either end within the radius of your grid (500 km unless changed), in the last 30 minutes:</p>
+        <ul>
+          <li><b>Quiet</b>: no paths</li>
+          <li><b>Local</b>: paths, but few over 1000 km</li>
+          <li><b>Open</b>: 3+ paths over 1000 km, 10% or more of all paths</li>
+          <li><b>DX</b>: 3+ paths over 5000 km, 5% or more of all paths</li>
+        </ul>
+        <p class="muted">The <b>Heard here</b> rows are rated by the farthest station your own receiver heard.</p>
+      </div>
+      <div class="panel">
+        <h2>If nothing decodes</h2>
+        <ul>
+          <li><b>Clock:</b> WSPR needs the PC clock within about 1 second. On Windows, check with <code>w32tm /query /status</code>; on Linux, install chrony.</li>
+          <li><b>Antenna:</b> check the antenna for the band in Settings.</li>
+          <li><b>DAX IQ channel:</b> don't run another DAX IQ program, or a second FlexWSPR, on the same channel.</li>
+          <li><b>Still nothing:</b> try <i>Flip Q in .c2 files</i>, then <i>Swap I and Q</i>.</li>
+          <li>The <b>Log</b> tab shows each cycle and any errors.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Credits</h2>
+        <ul>
+          <li><b>WSPR</b> and the <code>wsprd</code> decoder: Joe Taylor, K1JT, Steve Franke, K9AN, and the WSJT development group, as part of <a href="https://wsjt.sourceforge.io/" target="_blank" rel="noopener">WSJT-X</a> (GPL v3). FlexWSPR runs the installed <code>wsprd</code> as a separate program and does not include it.</li>
+          <li><b><a href="https://www.wsprnet.org/" target="_blank" rel="noopener">wsprnet.org</a></b>: the WSPR spot database that FlexWSPR uploads to.</li>
+          <li><b><a href="https://wspr.live/" target="_blank" rel="noopener">wspr.live</a></b>: the public WSPR database used for the Openings tab.</li>
+          <li><b>FlexRadio</b>: the SmartSDR API and DAX IQ (VITA-49) that FlexWSPR talks to. FlexRadio, SmartSDR and DAX are trademarks of FlexRadio Systems; FlexWSPR is not a FlexRadio product.</li>
+          <li><b>Libraries:</b> <a href="https://wails.io/" target="_blank" rel="noopener">Wails</a> (MIT) for the desktop window, <a href="https://github.com/go-yaml/yaml" target="_blank" rel="noopener">go-yaml</a> (MIT and Apache 2.0), and the <a href="https://go.dev/" target="_blank" rel="noopener">Go</a> standard library (BSD).</li>
+          <li>Written by Michael, VA3MW.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>License</h2>
+      <pre class="license">MIT License
+
+Copyright (c) 2026 Michael, VA3MW
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
+    </div>
+  </section>
+
 </main>
 <script src="app.js"></script>
 </body>
