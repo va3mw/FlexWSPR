@@ -1,0 +1,16 @@
+[Unit]
+Description=FlexWSPR WSPR receiver for FlexRadio
+Wants=network-online.target time-sync.target
+After=network-online.target time-sync.target
+
+[Service]
+# The config lives in the state directory so the web page can save it.
+ExecStart=/usr/local/bin/flexwspr -config /var/lib/flexwspr/flexwspr.yaml
+Restart=on-failure
+RestartSec=10
+DynamicUser=yes
+StateDirectory=flexwspr
+# Discovery needs the UDP broadcast on port 4992; the web page is on 8080.
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlexWSPR</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="logo">FlexWSPR</span>
+    <span id="station" class="muted"></span>
+  </div>
+  <div class="now">
+    <div class="pill" id="state">…</div>
+    <div class="bandnow"><span class="muted">Band</span> <b id="band">–</b> <span id="dial" class="muted mono"></span></div>
+    <div class="clock"><span class="mono" id="utc">--:--:--</span> <span class="muted">UTC</span>
+      <span class="muted">· next cycle</span> <span class="mono" id="countdown">–</span></div>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-tab="spots" class="on">Spots</button>
+  <button role="tab" data-tab="schedule">Schedule</button>
+  <button role="tab" data-tab="settings">Settings</button>
+  <button role="tab" data-tab="log">Log</button>
+</nav>
+
+<main>
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- Spots -->
+  <section id="tab-spots" class="tab on">
+    <div class="cards">
+      <div class="card"><div class="k">Radio</div><div class="v" id="radio">–</div><div class="s" id="stateText"></div></div>
+      <div class="card"><div class="k">Coming up</div><div class="v next" id="next">–</div><div class="s" id="schedState"></div></div>
+      <div class="card"><div class="k">Spots since start</div><div class="v" id="spotTotal">0</div><div class="s" id="bandSpots"></div></div>
+      <div class="card"><div class="k">wsprnet.org</div><div class="v" id="upload">off</div><div class="s" id="uploadQ"></div></div>
+    </div>
+    <div class="best" id="best" title="Score = SNR − (power dBm − 30) + 20·log10(km ÷ 1000): the SNR the signal would have from 1 W at 1000 km. Each doubling of distance adds 6 dB; more transmit power counts against it.">
+      <span class="k">Best signal</span> <span id="bestText" class="muted">none yet</span>
+      <span id="bestBands" class="muted small"></span>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <h2>Cycles</h2>
+        <div class="scroll"><table class="t" id="cycles">
+          <thead><tr><th>UTC</th><th>Band</th><th class="r">Spots</th></tr></thead><tbody></tbody>
+        </table></div>
+      </div>
+      <div class="panel grow">
+        <h2>Spots <span class="muted small" id="spotFilterNote"></span>
+          <select id="spotBand" class="inline"><option value="">All bands</option></select></h2>
+        <div class="scroll"><table class="t" id="spots">
+          <thead><tr><th>UTC</th><th>Band</th><th>Call</th><th>Grid</th><th class="r">km</th><th class="r">SNR</th><th class="r">DT</th><th class="r">MHz</th><th class="r">Drift</th><th class="r">dBm</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <p class="empty muted" id="noSpots">No spots yet. The first cycle decodes about two minutes after FlexWSPR connects.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Schedule -->
+  <section id="tab-schedule" class="tab">
+    <div class="panel">
+      <div class="modes" role="radiogroup">
+        <label class="mode"><input type="radio" name="mode" value="off"> <span><b>One band</b><br><span class="muted small">Stay on the default band</span></span></label>
+        <label class="mode"><input type="radio" name="mode" value="rotation"> <span><b>Band rotation</b><br><span class="muted small">Step through bands all day</span></span></label>
+        <label class="mode"><input type="radio" name="mode" value="slots"> <span><b>Time slots</b><br><span class="muted small">Different bands by time of day</span></span></label>
+      </div>
+      <div class="row">
+        <label>Default band <select id="defBand"></select></label>
+      </div>
+    </div>
+
+    <div class="panel" id="rotPanel">
+      <h2>Band rotation</h2>
+      <p class="muted">Pick the bands, then how many two-minute cycles to stay on each. FlexWSPR steps through them in order, around the clock.</p>
+      <div class="row">
+        <label>From <select id="rotFrom"></select></label>
+        <label>to <select id="rotTo"></select></label>
+        <button id="rotRange" class="ghost">Use this range</button>
+        <label>Cycles on each band <input type="number" id="rotCycles" min="1" max="30" value="3"></label>
+      </div>
+      <div class="chips" id="rotBands"></div>
+      <p class="muted small" id="rotSummary"></p>
+    </div>
+
+    <div class="panel" id="slotPanel">
+      <h2>Time slots</h2>
+      <p class="muted">Each slot covers a UTC time range and rotates through its bands. Outside every slot FlexWSPR stays on the default band. The first matching slot wins.</p>
+      <table class="t slots" id="slots">
+        <thead><tr><th>From (UTC)</th><th>To (UTC)</th><th>Bands, in order</th><th>Cycles each</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row">
+        <button id="addSlot" class="ghost">+ Add slot</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Next hour <span class="muted small">(with the changes above)</span></h2>
+      <div id="plan" class="plan"></div>
+      <p class="err" id="planErr"></p>
+    </div>
+    <div class="savebar"><span class="muted" id="schedDirty"></span><button class="primary" id="saveSched">Save and apply</button></div>
+  </section>
+
+  <!-- Settings -->
+  <section id="tab-settings" class="tab">
+    <form id="settings" class="grid" autocomplete="off">
+      <fieldset>
+        <legend>Station</legend>
+        <label>Callsign <input name="callsign" required maxlength="12" spellcheck="false"></label>
+        <label>Grid <input name="grid" required maxlength="6" placeholder="FN03 or FN03ab" spellcheck="false"></label>
+        <label class="check"><input type="checkbox" name="upload.enabled"> Upload spots to wsprnet.org</label>
+      </fieldset>
+      <fieldset>
+        <legend>Radio</legend>
+        <label>IP address <input name="radio.ip" placeholder="blank: find it on the LAN" spellcheck="false"></label>
+        <div class="row"><button type="button" class="ghost" id="findRadios">Find radios</button><span class="muted small" id="findNote"></span></div>
+        <div id="radios" class="radios"></div>
+        <label>Serial <input name="radio.serial" placeholder="only with several radios" spellcheck="false"></label>
+        <label class="check"><input type="checkbox" name="create_slice"> Show a DIGU slice on the band</label>
+      </fieldset>
+      <fieldset>
+        <legend>Receive antenna</legend>
+        <label>Default <select name="rxant"></select></label>
+        <p class="muted small">Per band (switched with the band, between cycles):</p>
+        <div class="antgrid" id="antgrid"></div>
+        <p class="muted small" id="antNote"></p>
+      </fieldset>
+      <fieldset>
+        <legend>DAX IQ</legend>
+        <label>Channel <select name="daxiq.channel"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+        <label>Rate <select name="daxiq.rate"><option value="24000">24 kHz</option><option value="48000">48 kHz</option><option value="96000">96 kHz</option><option value="192000">192 kHz</option></select></label>
+        <label class="check"><input type="checkbox" name="daxiq.swap_iq"> Swap I and Q</label>
+        <label class="check"><input type="checkbox" name="wsprd.flip_c2"> Flip Q in .c2 files</label>
+        <p class="muted small">Leave both off unless nothing ever decodes.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Decoder and files</legend>
+        <p class="muted small" id="localNote" hidden>These can only be changed in the config file or the desktop app.</p>
+        <label>wsprd program <input name="wsprd.path" class="sys" spellcheck="false"></label>
+        <label>wsprd options <input name="wsprd.args" class="sys" placeholder="e.g. -d for deeper decoding" spellcheck="false"></label>
+        <label>Data folder <input name="data_dir" class="sys" spellcheck="false"></label>
+        <label>Web page address <input name="web.listen" class="sys" placeholder=":8080, or off" spellcheck="false"></label>
+        <label class="check"><input type="checkbox" name="keep_c2"> Keep each cycle's .c2 file</label>
+        <label class="check"><input type="checkbox" name="debug"> Debug logging</label>
+        <p class="muted small mono" id="cfgPath"></p>
+      </fieldset>
+    </form>
+    <div class="savebar"><span class="err" id="setErr"></span><button class="primary" id="saveSet">Save and restart</button></div>
+  </section>
+
+  <!-- Log -->
+  <section id="tab-log" class="tab">
+    <div class="panel">
+      <label class="check"><input type="checkbox" id="follow" checked> Follow</label>
+      <pre id="log" class="log"></pre>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+# FlexWSPR configuration. Everything here can also be set in the GUI
+# (Settings and Schedule tabs), which rewrites this file when you save.
+# Linux service: /var/lib/flexwspr/flexwspr.yaml   Windows: C:\ProgramData\FlexWSPR\flexwspr.yaml
+# (or flexwspr.yaml next to the program)
+
+callsign: VA3MW
+grid: FN03
+
+radio:
+  ip: ""        # blank: find the radio by discovery on the LAN
+  serial: ""    # with several radios: the one to use
+
+band: 20m       # band name (2200m..6m) or dial MHz; used outside every schedule slot
+rxant: ANT1     # e.g. ANT1, ANT2, RX_A (FLEX-6600); blank leaves the radio's choice
+create_slice: true   # show a DIGU slice on the band (not needed to decode)
+
+schedule:
+  mode: off       # off (stay on band), rotation, or slots
+  rotation:       # mode: rotation - step through these bands all day
+    bands: [80m, 60m, 40m, 30m, 20m, 17m, 15m, 12m, 10m, 6m]
+    cycles: 3     # two-minute cycles on each band
+  slots:          # mode: slots - first matching slot wins; UTC; end may pass midnight
+    - start: "22:00"
+      end: "10:00"
+      bands: [80m, 40m, 30m]
+      cycles: 1
+    - start: "10:00"
+      end: "22:00"
+      bands: [30m, 20m, 17m]
+      cycles: 2
+
+daxiq:
+  channel: 1    # DAX IQ channel 1-4
+  rate: 24000   # 24000 is plenty for WSPR
+  swap_iq: false
+
+wsprd:
+  path: wsprd   # Debian's wsjtx package: wsprd on PATH; Windows: found in WSJT-X
+  args: []      # e.g. ["-d"] for deeper (slower) decoding
+  flip_c2: false  # only if decodes never appear on a busy band
+
+upload:
+  enabled: false  # send spots to wsprnet.org (needs callsign and grid)
+
+web:
+  listen: ":8080"   # the headless program's web page; "off" to turn it off.
+                    # Windows default: 127.0.0.1:8080 (this PC only)
+
+data_dir: /var/lib/flexwspr
+keep_c2: false  # keep each cycle's .c2 file (about 360 kB each)
+debug: false

@@ -1,0 +1,5 @@
+/flexwspr
+/flexwspr-*
+*.c2
+*.exe
+/dist/
