@@ -25,7 +25,7 @@ import (
 	"github.com/va3mw/FlexWSPR/internal/web"
 )
 
-var version = "0.3.0-dev" // set by the build scripts
+var version = "0.4.1" // set by the build scripts
 
 func main() {
 	cfgPath := flag.String("config", "", "configuration file")
@@ -45,6 +45,16 @@ func main() {
 	if err != nil {
 		st.Log().Error("config file could not be read; using defaults", "file", path, "err", err)
 	}
+
+	// Serve the same GUI as a web page too (web.listen; Windows default
+	// 127.0.0.1:8080, ":8080" for other computers, "off" for none), so the
+	// station can be watched from a phone or another PC. Like the headless
+	// program's page, it cannot change program paths.
+	stopWeb, werr := web.Serve(cfg.Web.Listen, st)
+	if werr != nil {
+		st.Log().Error("web page", "addr", cfg.Web.Listen, "err", werr)
+	}
+	defer stopWeb()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})

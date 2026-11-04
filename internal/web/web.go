@@ -6,9 +6,13 @@ package web
 import (
 	"embed"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/fs"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -152,4 +156,41 @@ func noCache(h http.Handler) http.Handler {
 		w.Header().Set("Cache-Control", "no-store")
 		h.ServeHTTP(w, r)
 	})
+}
+
+// Serve starts the web page on addr ("off" or "" does nothing) and returns
+// a function that stops it. Pages served this way get the remote Options:
+// they cannot change program paths.
+func Serve(addr string, st *app.Station) (stop func(), err error) {
+	if addr == "" || addr == "off" {
+		return func() {}, nil
+	}
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return func() {}, err
+	}
+	srv := &http.Server{Handler: Handler(st, Options{}), ReadHeaderTimeout: 10 * time.Second}
+	st.Log().Info("web page ready", "url", PageURL(ln.Addr()))
+	go func() {
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			st.Log().Error("web page", "err", err)
+		}
+	}()
+	return func() { srv.Close() }, nil
+}
+
+// PageURL is the address to type in a browser.
+func PageURL(a net.Addr) string {
+	ta, ok := a.(*net.TCPAddr)
+	if !ok {
+		return "http://" + a.String() + "/"
+	}
+	host := ta.IP.String()
+	if ta.IP.IsUnspecified() {
+		host, _ = os.Hostname()
+		if host == "" {
+			host = "localhost"
+		}
+	}
+	return fmt.Sprintf("http://%s/", net.JoinHostPort(host, fmt.Sprint(ta.Port)))
 }

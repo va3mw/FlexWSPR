@@ -111,3 +111,46 @@ func TestDistance(t *testing.T) {
 		t.Error("blank grid")
 	}
 }
+
+func TestServe(t *testing.T) {
+	st, _ := station(t)
+	stop, err := Serve("127.0.0.1:0", st)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer stop()
+	// Serve logs the URL it picked; find it in the station's log.
+	lines, _ := st.Logs.Since(0)
+	url := ""
+	for _, l := range lines {
+		if i := strings.Index(l, "url=http://"); i >= 0 {
+			url = strings.Fields(l[i+4:])[0]
+		}
+	}
+	if url == "" {
+		t.Fatalf("no URL logged: %q", lines)
+	}
+	resp, err := http.Get(url + "api/status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 200 {
+		t.Errorf("status: %d", resp.StatusCode)
+	}
+	// Changes from another site are refused, as on the headless program.
+	req, _ := http.NewRequest("POST", url+"api/config", strings.NewReader(`{}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://evil.example")
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("cross-site post: %d", resp.StatusCode)
+	}
+	if s, err := Serve("off", st); err != nil || s == nil {
+		t.Error("off should be a no-op")
+	}
+}

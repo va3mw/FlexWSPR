@@ -8,11 +8,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
-	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -26,7 +23,7 @@ import (
 	"github.com/va3mw/FlexWSPR/internal/wspr"
 )
 
-var version = "0.3.0-dev" // set by the build scripts
+var version = "0.4.1" // set by the build scripts
 
 func main() {
 	cfgPath := flag.String("config", "", "configuration file (default: "+config.DefaultConfigPath()+
@@ -61,38 +58,12 @@ func main() {
 	if *listen != "" {
 		addr = *listen
 	}
-	if addr != "off" {
-		srv := &http.Server{Addr: addr, Handler: web.Handler(st, web.Options{}), ReadHeaderTimeout: 10 * time.Second}
-		ln, err := net.Listen("tcp", addr)
-		if err != nil {
-			log.Error("web page", "addr", addr, "err", err)
-		} else {
-			log.Info("web page ready", "url", pageURL(ln.Addr()))
-			go func() {
-				if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-					log.Error("web page", "err", err)
-				}
-			}()
-			defer srv.Close()
-		}
+	stopWeb, err := web.Serve(addr, st)
+	if err != nil {
+		log.Error("web page", "addr", addr, "err", err)
 	}
+	defer stopWeb()
 	st.Run(ctx)
-}
-
-// pageURL is the address to type in a browser.
-func pageURL(a net.Addr) string {
-	ta, ok := a.(*net.TCPAddr)
-	if !ok {
-		return "http://" + a.String()
-	}
-	host := ta.IP.String()
-	if ta.IP.IsUnspecified() {
-		host, _ = os.Hostname()
-		if host == "" {
-			host = "localhost"
-		}
-	}
-	return fmt.Sprintf("http://%s/", net.JoinHostPort(host, fmt.Sprint(ta.Port)))
 }
 
 // decodeFile runs wsprd on a saved .c2 file, for checking wsprd and the

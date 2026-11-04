@@ -11,7 +11,7 @@ It comes two ways, sharing one engine and one GUI:
 | Program | GUI | For |
 |---|---|---|
 | `flexwspr` | A web page it serves itself (`http://<host>:8080`) | A headless Pi or Debian box; also runs on Windows |
-| `flexwspr-gui` | The same page in its own window (Wails) | Windows and Linux desktops |
+| `flexwspr-gui` | The same page in its own window (Wails), and also as a web page | Windows and Linux desktops |
 
 ## The GUI
 
@@ -92,13 +92,13 @@ the stronger signal still ranks higher.
 With Go 1.26:
 
 ```bash
-./build.sh 0.4.0
+./build.sh 0.4.1
 ```
 
 or on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.4.0
+.\build.ps1 -Version 0.4.1
 ```
 
 | File in `dist/` | For |
@@ -114,7 +114,7 @@ The Linux desktop app uses GTK and WebKit, so build it on the Linux machine:
 
 ```bash
 sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
-./build.sh 0.4.0
+./build.sh 0.4.1
 ```
 
 ## Run on Windows
@@ -126,6 +126,13 @@ sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.
 3. Settings are saved to `C:\ProgramData\FlexWSPR\flexwspr.yaml` (or
    `flexwspr.yaml` next to the program, if one is there). Data and the log
    (`flexwspr.log`) go to `C:\ProgramData\FlexWSPR\data`.
+
+While the app runs it also serves the GUI as a web page, at
+`http://localhost:8080` on this PC. To watch it from a phone or another
+computer, set the *Web page address* (`web.listen`) to `:8080` in the config
+file and restart the app; Windows asks once to allow it through the firewall.
+Over the network the page cannot change the program paths, and it has no
+password, so keep it on your own LAN. `web.listen: "off"` turns it off.
 
 Closing the window removes FlexWSPR's panadapter, slice and stream from the
 radio. Only one copy can run at a time. Windows syncs its clock less tightly
