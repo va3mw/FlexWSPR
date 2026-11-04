@@ -23,7 +23,7 @@ import (
 	"github.com/va3mw/FlexWSPR/internal/wspr"
 )
 
-var version = "0.4.1" // set by the build scripts
+var version = "0.4.2" // set by the build scripts
 
 func main() {
 	cfgPath := flag.String("config", "", "configuration file (default: "+config.DefaultConfigPath()+
@@ -58,11 +58,8 @@ func main() {
 	if *listen != "" {
 		addr = *listen
 	}
-	stopWeb, err := web.Serve(addr, st)
-	if err != nil {
-		log.Error("web page", "addr", addr, "err", err)
-	}
-	defer stopWeb()
+	// A -listen flag fixes the address; otherwise it follows the settings.
+	defer web.Start(addr, st, *listen == "").Close()
 	st.Run(ctx)
 }
 

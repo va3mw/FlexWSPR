@@ -92,13 +92,13 @@ the stronger signal still ranks higher.
 With Go 1.26:
 
 ```bash
-./build.sh 0.4.1
+./build.sh 0.4.2
 ```
 
 or on Windows:
 
 ```powershell
-.\build.ps1 -Version 0.4.1
+.\build.ps1 -Version 0.4.2
 ```
 
 | File in `dist/` | For |
@@ -114,7 +114,7 @@ The Linux desktop app uses GTK and WebKit, so build it on the Linux machine:
 
 ```bash
 sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
-./build.sh 0.4.1
+./build.sh 0.4.2
 ```
 
 ## Run on Windows
@@ -128,11 +128,14 @@ sudo apt install golang build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.
    (`flexwspr.log`) go to `C:\ProgramData\FlexWSPR\data`.
 
 While the app runs it also serves the GUI as a web page, at
-`http://localhost:8080` on this PC. To watch it from a phone or another
-computer, set the *Web page address* (`web.listen`) to `:8080` in the config
-file and restart the app; Windows asks once to allow it through the firewall.
-Over the network the page cannot change the program paths, and it has no
-password, so keep it on your own LAN. `web.listen: "off"` turns it off.
+`http://localhost:8080` on this PC. In the app's **Settings → Decoder and
+files**, set **Web page port**, and tick **Reachable from other computers**
+to watch it from a phone or another PC (Windows asks once to allow it through
+the firewall); a blank port turns the page off. The page moves as soon as you
+save. In the config file this is `web.listen`: `"127.0.0.1:8080"` (this PC
+only), `":8080"` (other computers) or `"off"`. Over the network the page
+cannot change the program paths or its own port, and it has no password, so
+keep it on your own LAN.
 
 Closing the window removes FlexWSPR's panadapter, slice and stream from the
 radio. Only one copy can run at a time. Windows syncs its clock less tightly

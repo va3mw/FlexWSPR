@@ -24,6 +24,7 @@ type Station struct {
 	cfg   *config.Config
 	saved bool
 	apply chan struct{}
+	onCfg []func(*config.Config)
 	up    *upload.Uploader
 	level *slog.LevelVar
 	log   *slog.Logger
@@ -84,8 +85,12 @@ func (s *Station) Apply(c *config.Config) error {
 	}
 	s.mu.Lock()
 	s.cfg, s.saved = c, true
+	hooks := append([]func(*config.Config){}, s.onCfg...)
 	s.mu.Unlock()
 	s.setLevel(c)
+	for _, fn := range hooks {
+		fn(c.Clone())
+	}
 	s.log.Info("configuration saved; restarting", "file", s.path)
 	select {
 	case s.apply <- struct{}{}:
@@ -143,4 +148,11 @@ func (s *Station) runOnce(ctx context.Context, cfg *config.Config) {
 	a.showBand(hz)
 	a.Run(ctx)
 	s.log.Info("FlexWSPR stopped")
+}
+
+// OnConfig registers fn to be called with each newly applied configuration.
+func (s *Station) OnConfig(fn func(*config.Config)) {
+	s.mu.Lock()
+	s.onCfg = append(s.onCfg, fn)
+	s.mu.Unlock()
 }

@@ -207,6 +207,29 @@ function fillAntennas(rxant, per) {
   $("#antNote").textContent = radioAnts() ? "Antennas as reported by the radio." : "Connect to the radio to read its antenna list.";
 }
 
+// web.listen is ":8080" (all computers), "127.0.0.1:8080" (this one only)
+// or "off". The form shows it as a port and a checkbox.
+function fillWeb(listen) {
+  const m = /^(.*):(\d+)$/.exec(listen || "");
+  $("#webPort").value = m ? m[2] : "";
+  $("#webLan").checked = m ? !/^(127\.0\.0\.1|localhost|\[::1\])$/.test(m[1]) : false;
+  webNote();
+}
+function readWeb() {
+  const p = parseInt($("#webPort").value, 10);
+  if (!p) return "off";
+  return ($("#webLan").checked ? "" : "127.0.0.1") + ":" + p;
+}
+function webNote() {
+  const p = parseInt($("#webPort").value, 10);
+  $("#webNote").textContent = !p ? "No web page."
+    : $("#webLan").checked ? `Other computers: http://<this computer>:${p}/ (no password; keep it on your LAN).`
+    : `This computer only: http://localhost:${p}/`;
+  if (!local) $("#webNote").textContent += " Change it in the config file or the desktop app.";
+}
+$("#webPort").addEventListener("input", webNote);
+$("#webLan").addEventListener("change", webNote);
+
 function fillSettings() {
   const f = $("#settings");
   fillAntennas(cfg.rxant, cfg.antennas || {});
@@ -217,6 +240,7 @@ function fillSettings() {
     else if (el.name === "wsprd.args") el.value = (v || []).join(" ");
     else el.value = v ?? "";
   }
+  fillWeb(cfg.web.listen);
   $$(".sys", f).forEach((el) => (el.disabled = !local));
   $("#localNote").hidden = local;
   $("#cfgPath").textContent = status ? "Config file: " + status.config_path : "";
@@ -233,6 +257,7 @@ function readSettings() {
     else v = el.value.trim();
     setPath(c, el.name, v);
   }
+  c.web.listen = readWeb();
   c.antennas = {};
   $$("#antgrid select").forEach((sel) => { if (sel.value) c.antennas[sel.dataset.band] = sel.value; });
   return c;

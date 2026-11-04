@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/va3mw/FlexWSPR/internal/app"
@@ -158,26 +159,62 @@ func noCache(h http.Handler) http.Handler {
 	})
 }
 
-// Serve starts the web page on addr ("off" or "" does nothing) and returns
-// a function that stops it. Pages served this way get the remote Options:
-// they cannot change program paths.
-func Serve(addr string, st *app.Station) (stop func(), err error) {
+// Server is the web page served over HTTP. It moves to a new address when
+// web.listen changes in the settings. Pages served this way get the remote
+// Options: they cannot change program paths.
+type Server struct {
+	st   *app.Station
+	mu   sync.Mutex
+	addr string
+	srv  *http.Server
+}
+
+// Start serves the page on addr ("off" or "" serves nothing). With follow,
+// it moves when web.listen changes in the settings.
+func Start(addr string, st *app.Station, follow bool) *Server {
+	s := &Server{st: st}
+	s.Set(addr)
+	if follow {
+		st.OnConfig(func(c *config.Config) { s.Set(c.Web.Listen) })
+	}
+	return s
+}
+
+// Set moves the page to addr. On failure (say the port is taken) the
+// page stays off and the error is logged.
+func (s *Server) Set(addr string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if addr == s.addr && (s.srv != nil || addr == "" || addr == "off") {
+		return nil
+	}
+	if s.srv != nil {
+		s.srv.Close()
+		s.srv = nil
+	}
+	s.addr = addr
 	if addr == "" || addr == "off" {
-		return func() {}, nil
+		s.st.Log().Info("web page off")
+		return nil
 	}
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		return func() {}, err
+		s.st.Log().Error("web page", "addr", addr, "err", err)
+		return err
 	}
-	srv := &http.Server{Handler: Handler(st, Options{}), ReadHeaderTimeout: 10 * time.Second}
-	st.Log().Info("web page ready", "url", PageURL(ln.Addr()))
+	srv := &http.Server{Handler: Handler(s.st, Options{}), ReadHeaderTimeout: 10 * time.Second}
+	s.srv = srv
+	s.st.Log().Info("web page ready", "url", PageURL(ln.Addr()))
 	go func() {
 		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			st.Log().Error("web page", "err", err)
+			s.st.Log().Error("web page", "err", err)
 		}
 	}()
-	return func() { srv.Close() }, nil
+	return nil
 }
+
+// Close stops the page.
+func (s *Server) Close() { s.Set("off") }
 
 // PageURL is the address to type in a browser.
 func PageURL(a net.Addr) string {

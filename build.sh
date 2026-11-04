@@ -8,7 +8,7 @@
 # Usage: ./build.sh [version]
 set -e
 cd "$(dirname "$0")"
-VERSION=${1:-0.4.1}
+VERSION=${1:-0.4.2}
 LDFLAGS="-s -w -X main.version=$VERSION"
 mkdir -p dist
 for target in linux/amd64 linux/arm64 linux/arm windows/amd64; do
